@@ -38,6 +38,7 @@ export default function Employees() {
 
   const [dialog, setDialog] = useState<{ open: boolean; editing: EmpRow | null }>({ open: false, editing: null });
   const [form, setForm] = useState(emptyForm());
+  const [uploadResult, setUploadResult] = useState<{ open: boolean; totalRows: number; successCount: number; errorCount: number; errors: { row: number; message: string }[] }>({ open: false, totalRows: 0, successCount: 0, errorCount: 0, errors: [] });
 
   const openCreate = () => {
     setForm(emptyForm());
@@ -75,7 +76,13 @@ export default function Employees() {
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
       const result = await bulkUpload.mutateAsync({ data: { xlsxBase64: base64 } as any });
       qc.invalidateQueries({ queryKey: ["/api/employees"] });
-      toast({ title: `Uploaded: ${result.successCount} created, ${result.errorCount} errors` });
+      setUploadResult({
+        open: true,
+        totalRows: result.totalRows ?? 0,
+        successCount: result.successCount ?? 0,
+        errorCount: result.errorCount ?? 0,
+        errors: (result.errors as any[]) ?? [],
+      });
     } catch (err: any) {
       toast({ title: err?.message || "Upload failed", variant: "destructive" });
     }
@@ -178,6 +185,47 @@ export default function Employees() {
           )}
         </CardContent>
       </Card>
+
+      {/* Bulk Upload Results Dialog */}
+      <Dialog open={uploadResult.open} onOpenChange={(open) => { if (!open) setUploadResult((r) => ({ ...r, open: false })); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Bulk Upload Results</DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-6 py-2 text-sm">
+            <span>Total rows: <strong>{uploadResult.totalRows}</strong></span>
+            <span className="text-green-700">Created: <strong>{uploadResult.successCount}</strong></span>
+            {uploadResult.errorCount > 0 && (
+              <span className="text-destructive">Errors: <strong>{uploadResult.errorCount}</strong></span>
+            )}
+          </div>
+          {uploadResult.errors.length > 0 ? (
+            <div className="rounded-md border overflow-y-auto max-h-72">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">Row</TableHead>
+                    <TableHead>Error</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {uploadResult.errors.map((err: any, i) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-mono text-xs">{err.row ?? i + 1}</TableCell>
+                      <TableCell className="text-sm text-destructive">{err.message ?? JSON.stringify(err)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">All rows imported successfully.</p>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setUploadResult((r) => ({ ...r, open: false }))}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={dialog.open} onOpenChange={(open) => { if (!open) setDialog({ open: false, editing: null }); }}>
         <DialogContent className="max-w-lg">

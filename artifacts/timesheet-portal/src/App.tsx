@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,6 +39,16 @@ function RequireRole({ roles, children }: { roles: string[]; children: React.Rea
   return <>{children}</>;
 }
 
+// Redirects the current user to their own profile page
+function SelfProfileRedirect() {
+  const { data: user, isLoading } = useGetCurrentUser({
+    query: { retry: false, queryKey: getGetCurrentUserQueryKey() },
+  });
+  if (isLoading) return null;
+  if (!user) return <Redirect to="/" />;
+  return <Redirect to={`/employees/${user.id}`} />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -60,11 +70,10 @@ function Router() {
                 <Employees />
               </RequireRole>
             </Route>
-            <Route path="/employees/:id">
-              <RequireRole roles={["Admin"]}>
-                <EmployeeProfile />
-              </RequireRole>
-            </Route>
+            {/* /profile — self-service shortcut for any role */}
+            <Route path="/profile" component={SelfProfileRedirect} />
+            {/* /employees/:id — Admin sees all; backend IDOR check handles Employee/Manager scoping */}
+            <Route path="/employees/:id" component={EmployeeProfile} />
             <Route path="/clients">
               <RequireRole roles={["Admin"]}>
                 <Clients />
