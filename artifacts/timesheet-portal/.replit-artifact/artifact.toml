@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Versatile Timesheet Portal"
+version = "1.0.0"
+id = "artifacts/timesheet-portal"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19667
+
+[services.development]
+run = "pnpm --filter @workspace/timesheet-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/timesheet-portal", "run", "build" ]
+publicDir = "artifacts/timesheet-portal/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19667"
+BASE_PATH = "/"

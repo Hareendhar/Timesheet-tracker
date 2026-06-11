@@ -1,0 +1,3 @@
+- [Timesheet Portal Architecture](timesheet-portal-arch.md) — full-stack timesheet app: Express API at /api, React+Vite frontend at /, PostgreSQL+Drizzle
+- [Google OAuth Setup](google-oauth-setup.md) — custom OAuth flow (no passport), requires GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET secrets
+- [DB Seed Users](db-seed-users.md) — demo employees seeded; emails must match Google accounts for login to work

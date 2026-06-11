@@ -3,20 +3,42 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Versatile Timesheet Portal API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: employees
+    description: Employee management
+  - name: clients
+    description: Client management
+  - name: projects
+    description: Project management
+  - name: activities
+    description: Activity category management
+  - name: timesheets
+    description: Timesheet management
+  - name: notifications
+    description: In-app notifications
+  - name: audit
+    description: Audit log
+  - name: dashboard
+    description: Dashboard statistics
+  - name: search
+    description: Global search
+  - name: export
+    description: Data export
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +46,882 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # AUTH
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+        "401":
+          description: Not authenticated
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current user
+      responses:
+        "200":
+          description: Logged out
+
+  # EMPLOYEES
+  /employees:
+    get:
+      operationId: listEmployees
+      tags: [employees]
+      summary: List employees with pagination, sorting, and filtering
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: role
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: department
+          in: query
+          schema: { type: string }
+        - name: managerId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated list of employees
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeList"
+    post:
+      operationId: createEmployee
+      tags: [employees]
+      summary: Create a new employee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+
+  /employees/bulk-upload:
+    post:
+      operationId: bulkUploadEmployees
+      tags: [employees]
+      summary: Bulk upload employees from Excel/CSV
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkEmployeeUpload"
+      responses:
+        "200":
+          description: Upload result with row-wise errors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkUploadResult"
+
+  /employees/{employeeId}:
+    get:
+      operationId: getEmployee
+      tags: [employees]
+      summary: Get employee by ID
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Employee
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateEmployee
+      tags: [employees]
+      summary: Update employee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+    delete:
+      operationId: deleteEmployee
+      tags: [employees]
+      summary: Delete (deactivate) employee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+
+  /employees/{employeeId}/profile:
+    get:
+      operationId: getEmployeeProfile
+      tags: [employees]
+      summary: Get employee profile with metrics
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Employee profile with metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeProfile"
+
+  /employees/{employeeId}/direct-reports:
+    get:
+      operationId: getDirectReports
+      tags: [employees]
+      summary: Get direct reports of a manager
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of direct reports with stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagerProfile"
+
+  # CLIENTS
+  /clients:
+    get:
+      operationId: listClients
+      tags: [clients]
+      summary: List clients
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated list of clients
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientList"
+    post:
+      operationId: createClient
+      tags: [clients]
+      summary: Create client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+
+  /clients/{clientId}:
+    get:
+      operationId: getClient
+      tags: [clients]
+      summary: Get client by ID
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+    patch:
+      operationId: updateClient
+      tags: [clients]
+      summary: Update client
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+    delete:
+      operationId: deleteClient
+      tags: [clients]
+      summary: Delete client
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+
+  # PROJECTS
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List projects with pagination
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: clientId
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated list of projects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectList"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{projectId}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get project by ID
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+
+  # ACTIVITY CATEGORIES
+  /activities:
+    get:
+      operationId: listActivities
+      tags: [activities]
+      summary: List activity categories
+      responses:
+        "200":
+          description: List of activity categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+    post:
+      operationId: createActivity
+      tags: [activities]
+      summary: Create activity category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+
+  /activities/{activityId}:
+    patch:
+      operationId: updateActivity
+      tags: [activities]
+      summary: Update activity category
+      parameters:
+        - name: activityId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+    delete:
+      operationId: deleteActivity
+      tags: [activities]
+      summary: Delete activity category
+      parameters:
+        - name: activityId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+
+  # TIMESHEETS
+  /timesheets:
+    get:
+      operationId: listTimesheets
+      tags: [timesheets]
+      summary: List timesheets with filters and pagination
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: employeeId
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: weekStartDate
+          in: query
+          schema: { type: string }
+        - name: managerId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated list of timesheets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimesheetList"
+    post:
+      operationId: createTimesheet
+      tags: [timesheets]
+      summary: Create or update a weekly timesheet draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TimesheetInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Timesheet"
+
+  /timesheets/{timesheetId}:
+    get:
+      operationId: getTimesheet
+      tags: [timesheets]
+      summary: Get timesheet by ID
+      parameters:
+        - name: timesheetId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Timesheet with rows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Timesheet"
+    patch:
+      operationId: updateTimesheet
+      tags: [timesheets]
+      summary: Update timesheet rows (draft only)
+      parameters:
+        - name: timesheetId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TimesheetUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Timesheet"
+
+  /timesheets/{timesheetId}/submit:
+    post:
+      operationId: submitTimesheet
+      tags: [timesheets]
+      summary: Submit timesheet for approval
+      parameters:
+        - name: timesheetId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Timesheet"
+
+  /timesheets/{timesheetId}/approve:
+    post:
+      operationId: approveTimesheet
+      tags: [timesheets]
+      summary: Approve a submitted timesheet
+      parameters:
+        - name: timesheetId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalAction"
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Timesheet"
+
+  /timesheets/{timesheetId}/reject:
+    post:
+      operationId: rejectTimesheet
+      tags: [timesheets]
+      summary: Reject a submitted timesheet
+      parameters:
+        - name: timesheetId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectionAction"
+      responses:
+        "200":
+          description: Rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Timesheet"
+
+  /timesheets/bulk-action:
+    post:
+      operationId: bulkTimesheetAction
+      tags: [timesheets]
+      summary: Bulk approve or reject multiple timesheets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkTimesheetAction"
+      responses:
+        "200":
+          description: Bulk action result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkActionResult"
+
+  /timesheets/copy-previous-week:
+    post:
+      operationId: copyPreviousWeek
+      tags: [timesheets]
+      summary: Copy previous week rows to new draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CopyWeekRequest"
+      responses:
+        "200":
+          description: New timesheet with copied rows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Timesheet"
+
+  # NOTIFICATIONS
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications for current user
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema: { type: boolean }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationList"
+
+  /notifications/{notificationId}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Marked read
+
+  /notifications/read-all:
+    patch:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: All marked read
+
+  # AUDIT LOG
+  /audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [audit]
+      summary: List audit logs with filters
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 50 }
+        - name: userId
+          in: query
+          schema: { type: string }
+        - name: action
+          in: query
+          schema: { type: string }
+        - name: role
+          in: query
+          schema: { type: string }
+        - name: dateFrom
+          in: query
+          schema: { type: string }
+        - name: dateTo
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated audit logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLogList"
+
+  # DASHBOARD
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get global dashboard statistics
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/timesheet-status-breakdown:
+    get:
+      operationId: getTimesheetStatusBreakdown
+      tags: [dashboard]
+      summary: Timesheet counts grouped by status
+      responses:
+        "200":
+          description: Status breakdown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimesheetStatusBreakdown"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Recent timesheet activity feed
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityFeedItem"
+
+  /dashboard/compliance-overview:
+    get:
+      operationId: getComplianceOverview
+      tags: [dashboard]
+      summary: Weekly compliance rates by department
+      responses:
+        "200":
+          description: Compliance overview
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ComplianceItem"
+
+  # SEARCH
+  /search:
+    get:
+      operationId: globalSearch
+      tags: [search]
+      summary: Global search across employees, projects, clients
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+
+  # EXPORT
+  /export/employees:
+    get:
+      operationId: exportEmployees
+      tags: [export]
+      summary: Export employees as CSV/Excel
+      parameters:
+        - name: format
+          in: query
+          schema: { type: string, enum: [csv, excel], default: csv }
+      responses:
+        "200":
+          description: File download
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /export/timesheets:
+    get:
+      operationId: exportTimesheets
+      tags: [export]
+      summary: Export timesheets as CSV/Excel
+      parameters:
+        - name: format
+          in: query
+          schema: { type: string, enum: [csv, excel], default: csv }
+        - name: dateFrom
+          in: query
+          schema: { type: string }
+        - name: dateTo
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: File download
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /export/audit-logs:
+    get:
+      operationId: exportAuditLogs
+      tags: [export]
+      summary: Export audit logs as CSV/Excel
+      parameters:
+        - name: format
+          in: query
+          schema: { type: string, enum: [csv, excel], default: csv }
+        - name: dateFrom
+          in: query
+          schema: { type: string }
+        - name: dateTo
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: File download
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +929,725 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    CurrentUser:
+      type: object
+      properties:
+        id:
+          type: string
+        employeeId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        department:
+          type: ["string", "null"]
+        designation:
+          type: ["string", "null"]
+        managerId:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+      required: [id, employeeId, name, email, role]
+
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+        employeeId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        designation:
+          type: string
+        role:
+          type: string
+          enum: [Employee, Manager, Admin]
+        managerId:
+          type: ["string", "null"]
+        managerName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [Active, Inactive]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, employeeId, name, email, department, designation, role, status, createdAt, updatedAt]
+
+    EmployeeInput:
+      type: object
+      properties:
+        employeeId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        designation:
+          type: string
+        role:
+          type: string
+          enum: [Employee, Manager, Admin]
+        managerId:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [Active, Inactive]
+      required: [employeeId, name, email, department, designation, role, status]
+
+    EmployeeUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        department:
+          type: string
+        designation:
+          type: string
+        role:
+          type: string
+          enum: [Employee, Manager, Admin]
+        managerId:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [Active, Inactive]
+
+    EmployeeList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Employee"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+      required: [data, total, page, pageSize]
+
+    EmployeeProfile:
+      type: object
+      properties:
+        employee:
+          $ref: "#/components/schemas/Employee"
+        metrics:
+          $ref: "#/components/schemas/EmployeeMetrics"
+      required: [employee, metrics]
+
+    EmployeeMetrics:
+      type: object
+      properties:
+        totalSubmitted:
+          type: integer
+        pending:
+          type: integer
+        rejected:
+          type: integer
+        approved:
+          type: integer
+        approvalRate:
+          type: number
+      required: [totalSubmitted, pending, rejected, approved, approvalRate]
+
+    ManagerProfile:
+      type: object
+      properties:
+        manager:
+          $ref: "#/components/schemas/Employee"
+        metrics:
+          $ref: "#/components/schemas/ManagerMetrics"
+        directReports:
+          type: array
+          items:
+            $ref: "#/components/schemas/DirectReportSummary"
+      required: [manager, metrics, directReports]
+
+    ManagerMetrics:
+      type: object
+      properties:
+        totalReports:
+          type: integer
+        approved:
+          type: integer
+        rejected:
+          type: integer
+        pendingApprovals:
+          type: integer
+      required: [totalReports, approved, rejected, pendingApprovals]
+
+    DirectReportSummary:
+      type: object
+      properties:
+        employee:
+          $ref: "#/components/schemas/Employee"
+        submitted:
+          type: integer
+        approved:
+          type: integer
+        rejected:
+          type: integer
+      required: [employee, submitted, approved, rejected]
+
+    BulkEmployeeUpload:
+      type: object
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/BulkEmployeeRow"
+      required: [rows]
+
+    BulkEmployeeRow:
+      type: object
+      properties:
+        employeeId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        designation:
+          type: string
+        role:
+          type: string
+        managerId:
+          type: string
+        status:
+          type: string
+      required: [employeeId, name, email, department, designation, role, status]
+
+    BulkUploadResult:
+      type: object
+      properties:
+        totalRows:
+          type: integer
+        successCount:
+          type: integer
+        errorCount:
+          type: integer
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/BulkUploadError"
+      required: [totalRows, successCount, errorCount, errors]
+
+    BulkUploadError:
+      type: object
+      properties:
+        row:
+          type: integer
+        field:
+          type: string
+        message:
+          type: string
+      required: [row, field, message]
+
+    Client:
+      type: object
+      properties:
+        id:
+          type: string
+        clientCode:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [Active, Inactive]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, clientCode, name, status, createdAt, updatedAt]
+
+    ClientInput:
+      type: object
+      properties:
+        clientCode:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [Active, Inactive]
+      required: [clientCode, name, status]
+
+    ClientUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [Active, Inactive]
+
+    ClientList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Client"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+      required: [data, total, page, pageSize]
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        projectCode:
+          type: string
+        name:
+          type: string
+        clientId:
+          type: string
+        clientName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [Active, Inactive]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, projectCode, name, clientId, status, createdAt, updatedAt]
+
+    ProjectInput:
+      type: object
+      properties:
+        projectCode:
+          type: string
+        name:
+          type: string
+        clientId:
+          type: string
+        status:
+          type: string
+          enum: [Active, Inactive]
+      required: [projectCode, name, clientId, status]
+
+    ProjectUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        clientId:
+          type: string
+        status:
+          type: string
+          enum: [Active, Inactive]
+
+    ProjectList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+      required: [data, total, page, pageSize]
+
+    Activity:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [Active, Inactive]
+        createdAt:
+          type: string
+      required: [id, name, status, createdAt]
+
+    ActivityInput:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [Active, Inactive]
+      required: [name, status]
+
+    ActivityUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [Active, Inactive]
+
+    TimesheetRow:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        projectName:
+          type: ["string", "null"]
+        activityId:
+          type: string
+        activityName:
+          type: ["string", "null"]
+        monday:
+          type: number
+        tuesday:
+          type: number
+        wednesday:
+          type: number
+        thursday:
+          type: number
+        friday:
+          type: number
+        saturday:
+          type: number
+        sunday:
+          type: number
+        totalHours:
+          type: number
+        comments:
+          type: ["string", "null"]
+      required: [id, projectId, activityId, monday, tuesday, wednesday, thursday, friday, saturday, sunday, totalHours]
+
+    TimesheetRowInput:
+      type: object
+      properties:
+        projectId:
+          type: string
+        activityId:
+          type: string
+        monday:
+          type: number
+        tuesday:
+          type: number
+        wednesday:
+          type: number
+        thursday:
+          type: number
+        friday:
+          type: number
+        saturday:
+          type: number
+        sunday:
+          type: number
+        comments:
+          type: ["string", "null"]
+      required: [projectId, activityId, monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+
+    Timesheet:
+      type: object
+      properties:
+        id:
+          type: string
+        employeeId:
+          type: string
+        employeeName:
+          type: ["string", "null"]
+        weekStartDate:
+          type: string
+        weekEndDate:
+          type: string
+        status:
+          type: string
+          enum: [Draft, Submitted, Approved, Rejected]
+        totalHours:
+          type: number
+        submittedAt:
+          type: ["string", "null"]
+        approvedAt:
+          type: ["string", "null"]
+        approvedBy:
+          type: ["string", "null"]
+        approverName:
+          type: ["string", "null"]
+        rejectionComment:
+          type: ["string", "null"]
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimesheetRow"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, employeeId, weekStartDate, weekEndDate, status, totalHours, rows, createdAt, updatedAt]
+
+    TimesheetInput:
+      type: object
+      properties:
+        employeeId:
+          type: string
+        weekStartDate:
+          type: string
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimesheetRowInput"
+      required: [employeeId, weekStartDate, rows]
+
+    TimesheetUpdate:
+      type: object
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimesheetRowInput"
+      required: [rows]
+
+    TimesheetList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Timesheet"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+      required: [data, total, page, pageSize]
+
+    ApprovalAction:
+      type: object
+      properties:
+        comment:
+          type: ["string", "null"]
+
+    RejectionAction:
+      type: object
+      properties:
+        comment:
+          type: string
+      required: [comment]
+
+    BulkTimesheetAction:
+      type: object
+      properties:
+        timesheetIds:
+          type: array
+          items:
+            type: string
+        action:
+          type: string
+          enum: [approve, reject]
+        comment:
+          type: ["string", "null"]
+      required: [timesheetIds, action]
+
+    BulkActionResult:
+      type: object
+      properties:
+        processed:
+          type: integer
+        succeeded:
+          type: integer
+        failed:
+          type: integer
+      required: [processed, succeeded, failed]
+
+    CopyWeekRequest:
+      type: object
+      properties:
+        sourceWeekStartDate:
+          type: string
+        targetWeekStartDate:
+          type: string
+        employeeId:
+          type: string
+      required: [sourceWeekStartDate, targetWeekStartDate, employeeId]
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        isRead:
+          type: boolean
+        relatedId:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, type, title, message, isRead, createdAt]
+
+    NotificationList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        total:
+          type: integer
+        unreadCount:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+      required: [data, total, unreadCount, page, pageSize]
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        userName:
+          type: ["string", "null"]
+        role:
+          type: string
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: ["string", "null"]
+        oldValue:
+          type: ["string", "null"]
+        newValue:
+          type: ["string", "null"]
+        ipAddress:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, userId, role, action, entityType, createdAt]
+
+    AuditLogList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLog"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+      required: [data, total, page, pageSize]
+
+    DashboardStats:
+      type: object
+      properties:
+        totalEmployees:
+          type: integer
+        totalManagers:
+          type: integer
+        totalProjects:
+          type: integer
+        totalClients:
+          type: integer
+        timesheetsSubmitted:
+          type: integer
+        timesheetsApproved:
+          type: integer
+        timesheetsRejected:
+          type: integer
+        pendingApprovals:
+          type: integer
+        complianceRate:
+          type: number
+      required: [totalEmployees, totalManagers, totalProjects, totalClients, timesheetsSubmitted, timesheetsApproved, timesheetsRejected, pendingApprovals, complianceRate]
+
+    TimesheetStatusBreakdown:
+      type: object
+      properties:
+        draft:
+          type: integer
+        submitted:
+          type: integer
+        approved:
+          type: integer
+        rejected:
+          type: integer
+      required: [draft, submitted, approved, rejected]
+
+    ActivityFeedItem:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+        employeeName:
+          type: string
+        weekStartDate:
+          type: string
+        timestamp:
+          type: string
+        timesheetId:
+          type: string
+      required: [id, action, employeeName, weekStartDate, timestamp, timesheetId]
+
+    ComplianceItem:
+      type: object
+      properties:
+        department:
+          type: string
+        totalEmployees:
+          type: integer
+        submitted:
+          type: integer
+        complianceRate:
+          type: number
+      required: [department, totalEmployees, submitted, complianceRate]
+
+    SearchResults:
+      type: object
+      properties:
+        employees:
+          type: array
+          items:
+            $ref: "#/components/schemas/Employee"
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        clients:
+          type: array
+          items:
+            $ref: "#/components/schemas/Client"
+      required: [employees, projects, clients]
