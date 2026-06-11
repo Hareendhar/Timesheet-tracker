@@ -59,4 +59,20 @@ router.get("/dashboard/compliance-overview", requireAuth, requireRole("Admin", "
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// Employee-safe dashboard: only the calling employee's own timesheet data
+router.get("/dashboard/my-stats", requireAuth, async (req, res) => {
+  try {
+    const user = (req.session as any).user;
+    const result = await timesheetRepo.findAll({ employeeId: user.id, pageSize: 1000 });
+    const ts = result.data as any[];
+    const total      = ts.length;
+    const drafts     = ts.filter((t) => t.status === "Draft").length;
+    const submitted  = ts.filter((t) => t.status === "Submitted").length;
+    const approved   = ts.filter((t) => t.status === "Approved").length;
+    const rejected   = ts.filter((t) => t.status === "Rejected").length;
+    const totalHours = ts.reduce((sum: number, t: any) => sum + (Number(t.totalHours) || 0), 0);
+    res.json({ total, drafts, submitted, approved, rejected, totalHours });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 export default router;

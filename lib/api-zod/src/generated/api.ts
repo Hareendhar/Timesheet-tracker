@@ -33,6 +33,18 @@ export const GetCurrentUserResponse = zod.object({
 
 
 /**
+ * Handles the redirect from Google after the user grants or denies consent. On success, creates or updates the user session and redirects to the app. On failure, redirects to /login?error=<reason>.
+
+ * @summary Google OAuth 2.0 callback handler
+ */
+export const GoogleOAuthCallbackQueryParams = zod.object({
+  "code": zod.coerce.string().optional().describe('Authorization code returned by Google on success'),
+  "state": zod.coerce.string().optional().describe('CSRF state token generated at login initiation'),
+  "error": zod.coerce.string().optional().describe('Error code returned by Google on denial')
+})
+
+
+/**
  * @summary List employees with pagination, sorting, and filtering
  */
 export const listEmployeesQueryPageDefault = 1;
@@ -977,6 +989,19 @@ export const GetComplianceOverviewResponseItem = zod.object({
   "complianceRate": zod.number()
 })
 export const GetComplianceOverviewResponse = zod.array(GetComplianceOverviewResponseItem)
+
+
+/**
+ * @summary Employee-scoped dashboard stats (own timesheets only)
+ */
+export const GetDashboardMyStatsResponse = zod.object({
+  "total": zod.number(),
+  "drafts": zod.number(),
+  "submitted": zod.number(),
+  "approved": zod.number(),
+  "rejected": zod.number(),
+  "totalHours": zod.number()
+})
 
 
 /**

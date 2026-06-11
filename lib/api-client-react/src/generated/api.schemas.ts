@@ -532,11 +532,35 @@ export interface ComplianceItem {
   complianceRate: number;
 }
 
+export interface MyDashboardStats {
+  total: number;
+  drafts: number;
+  submitted: number;
+  approved: number;
+  rejected: number;
+  totalHours: number;
+}
+
 export interface SearchResults {
   employees: Employee[];
   projects: Project[];
   clients: Client[];
 }
+
+export type GoogleOAuthCallbackParams = {
+/**
+ * Authorization code returned by Google on success
+ */
+code?: string;
+/**
+ * CSRF state token generated at login initiation
+ */
+state?: string;
+/**
+ * Error code returned by Google on denial
+ */
+error?: string;
+};
 
 export type ListEmployeesParams = {
 page?: number;

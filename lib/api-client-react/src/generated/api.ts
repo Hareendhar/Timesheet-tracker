@@ -48,6 +48,7 @@ import type {
   ExportTimesheetsParams,
   GetRecentActivityParams,
   GlobalSearchParams,
+  GoogleOAuthCallbackParams,
   HealthStatus,
   ListAuditLogsParams,
   ListClientsParams,
@@ -56,6 +57,7 @@ import type {
   ListProjectsParams,
   ListTimesheetsParams,
   ManagerProfile,
+  MyDashboardStats,
   NotificationList,
   Project,
   ProjectInput,
@@ -305,6 +307,170 @@ export const useLogout = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getLogoutMutationOptions(options));
     }
+
+export const getInitiateGoogleOAuthUrl = () => {
+
+
+
+
+  return `/api/auth/google`
+}
+
+/**
+ * Redirects the browser to Google's OAuth consent screen.
+ * @summary Initiate Google OAuth 2.0 login flow
+ */
+export const initiateGoogleOAuth = async ( options?: RequestInit): Promise<unknown> => {
+
+  return customFetch<unknown>(getInitiateGoogleOAuthUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getInitiateGoogleOAuthQueryKey = () => {
+    return [
+    `/api/auth/google`
+    ] as const;
+    }
+
+
+export const getInitiateGoogleOAuthQueryOptions = <TData = Awaited<ReturnType<typeof initiateGoogleOAuth>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof initiateGoogleOAuth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getInitiateGoogleOAuthQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof initiateGoogleOAuth>>> = ({ signal }) => initiateGoogleOAuth({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof initiateGoogleOAuth>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type InitiateGoogleOAuthQueryResult = NonNullable<Awaited<ReturnType<typeof initiateGoogleOAuth>>>
+export type InitiateGoogleOAuthQueryError = ErrorType<void>
+
+
+/**
+ * @summary Initiate Google OAuth 2.0 login flow
+ */
+
+export function useInitiateGoogleOAuth<TData = Awaited<ReturnType<typeof initiateGoogleOAuth>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof initiateGoogleOAuth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getInitiateGoogleOAuthQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGoogleOAuthCallbackUrl = (params?: GoogleOAuthCallbackParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/auth/google/callback?${stringifiedParams}` : `/api/auth/google/callback`
+}
+
+/**
+ * Handles the redirect from Google after the user grants or denies consent. On success, creates or updates the user session and redirects to the app. On failure, redirects to /login?error=<reason>.
+
+ * @summary Google OAuth 2.0 callback handler
+ */
+export const googleOAuthCallback = async (params?: GoogleOAuthCallbackParams, options?: RequestInit): Promise<unknown> => {
+
+  return customFetch<unknown>(getGoogleOAuthCallbackUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGoogleOAuthCallbackQueryKey = (params?: GoogleOAuthCallbackParams,) => {
+    return [
+    `/api/auth/google/callback`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGoogleOAuthCallbackQueryOptions = <TData = Awaited<ReturnType<typeof googleOAuthCallback>>, TError = ErrorType<void>>(params?: GoogleOAuthCallbackParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof googleOAuthCallback>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGoogleOAuthCallbackQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof googleOAuthCallback>>> = ({ signal }) => googleOAuthCallback(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof googleOAuthCallback>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GoogleOAuthCallbackQueryResult = NonNullable<Awaited<ReturnType<typeof googleOAuthCallback>>>
+export type GoogleOAuthCallbackQueryError = ErrorType<void>
+
+
+/**
+ * @summary Google OAuth 2.0 callback handler
+ */
+
+export function useGoogleOAuthCallback<TData = Awaited<ReturnType<typeof googleOAuthCallback>>, TError = ErrorType<void>>(
+ params?: GoogleOAuthCallbackParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof googleOAuthCallback>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGoogleOAuthCallbackQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListEmployeesUrl = (params?: ListEmployeesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -3214,6 +3380,83 @@ export function useGetComplianceOverview<TData = Awaited<ReturnType<typeof getCo
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetComplianceOverviewQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetDashboardMyStatsUrl = () => {
+
+
+
+
+  return `/api/dashboard/my-stats`
+}
+
+/**
+ * @summary Employee-scoped dashboard stats (own timesheets only)
+ */
+export const getDashboardMyStats = async ( options?: RequestInit): Promise<MyDashboardStats> => {
+
+  return customFetch<MyDashboardStats>(getGetDashboardMyStatsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDashboardMyStatsQueryKey = () => {
+    return [
+    `/api/dashboard/my-stats`
+    ] as const;
+    }
+
+
+export const getGetDashboardMyStatsQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardMyStats>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardMyStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDashboardMyStatsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardMyStats>>> = ({ signal }) => getDashboardMyStats({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardMyStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDashboardMyStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardMyStats>>>
+export type GetDashboardMyStatsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Employee-scoped dashboard stats (own timesheets only)
+ */
+
+export function useGetDashboardMyStats<TData = Awaited<ReturnType<typeof getDashboardMyStats>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardMyStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDashboardMyStatsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

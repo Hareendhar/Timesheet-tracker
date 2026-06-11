@@ -879,6 +879,21 @@ paths:
                 items:
                   $ref: "#/components/schemas/ComplianceItem"
 
+  /dashboard/my-stats:
+    get:
+      operationId: getDashboardMyStats
+      tags: [dashboard]
+      summary: Employee-scoped dashboard stats (own timesheets only)
+      responses:
+        "200":
+          description: Personal timesheet summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyDashboardStats"
+        "401":
+          description: Not authenticated
+
   # SEARCH
   /search:
     get:
@@ -1677,6 +1692,23 @@ components:
         complianceRate:
           type: number
       required: [department, totalEmployees, submitted, complianceRate]
+
+    MyDashboardStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        drafts:
+          type: integer
+        submitted:
+          type: integer
+        approved:
+          type: integer
+        rejected:
+          type: integer
+        totalHours:
+          type: number
+      required: [total, drafts, submitted, approved, rejected, totalHours]
 
     SearchResults:
       type: object
