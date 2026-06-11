@@ -1,15 +1,22 @@
 import { useParams, useLocation } from "wouter";
 import { useGetTimesheet, useUpdateTimesheet, useSubmitTimesheet, useListProjects, useListActivities, useGetCurrentUser, getGetTimesheetQueryKey } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, Send } from "lucide-react";
+import { Trash2, Plus, Send, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+
+const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+function emptyRow() {
+  return { rowId: crypto.randomUUID(), projectId: "", activityId: "", monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0, comments: "" };
+}
 
 export default function TimesheetDetail() {
   const { id } = useParams<{ id: string }>();
@@ -19,7 +26,7 @@ export default function TimesheetDetail() {
   const { data: timesheet, isLoading } = useGetTimesheet(id || "", { query: { enabled: !!id, queryKey: getGetTimesheetQueryKey(id || "") } });
   const { data: projects } = useListProjects({ pageSize: 100 });
   const { data: activities } = useListActivities();
-  
+
   const updateTimesheet = useUpdateTimesheet();
   const submitTimesheet = useSubmitTimesheet();
 
@@ -33,47 +40,53 @@ export default function TimesheetDetail() {
 
   const isEditable = timesheet?.status === "Draft" || timesheet?.status === "Rejected";
 
-  const addRow = () => {
-    setRows([...rows, { rowId: crypto.randomUUID(), projectId: "", activityId: "", monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0, comments: "" }]);
-  };
+  const addRow = () => setRows([...rows, emptyRow()]);
 
   const removeRow = (rowId: string) => {
+    if (rows.length === 1) return;
     setRows(rows.filter(r => r.rowId !== rowId));
+  };
+
+  const duplicateRow = (rowId: string) => {
+    const row = rows.find(r => r.rowId === rowId);
+    if (!row) return;
+    const idx = rows.findIndex(r => r.rowId === rowId);
+    const copy = { ...row, rowId: crypto.randomUUID() };
+    const newRows = [...rows];
+    newRows.splice(idx + 1, 0, copy);
+    setRows(newRows);
   };
 
   const updateRow = (rowId: string, field: string, value: any) => {
     setRows(rows.map(r => r.rowId === rowId ? { ...r, [field]: value } : r));
   };
 
-  const calculateRowTotal = (row: any) => {
-    return (Number(row.monday) || 0) + (Number(row.tuesday) || 0) + (Number(row.wednesday) || 0) + (Number(row.thursday) || 0) + (Number(row.friday) || 0) + (Number(row.saturday) || 0) + (Number(row.sunday) || 0);
-  };
+  const calculateRowTotal = (row: any) =>
+    DAYS.reduce((sum, d) => sum + (Number(row[d]) || 0), 0);
 
-  const calculateGrandTotal = () => {
-    return rows.reduce((sum, row) => sum + calculateRowTotal(row), 0);
-  };
+  const calculateGrandTotal = () =>
+    rows.reduce((sum, row) => sum + calculateRowTotal(row), 0);
+
+  const buildPayloadRows = () =>
+    rows.map(({ rowId, ...rest }) => ({
+      projectId: rest.projectId,
+      activityId: rest.activityId,
+      comments: rest.comments || "",
+      monday: Number(rest.monday) || 0,
+      tuesday: Number(rest.tuesday) || 0,
+      wednesday: Number(rest.wednesday) || 0,
+      thursday: Number(rest.thursday) || 0,
+      friday: Number(rest.friday) || 0,
+      saturday: Number(rest.saturday) || 0,
+      sunday: Number(rest.sunday) || 0,
+    }));
 
   const handleSave = async () => {
-    if (!id || !user?.employeeId || !timesheet) return;
+    if (!id || !timesheet) return;
     try {
-      const data = {
-        rows: rows.map(({ rowId, ...rest }) => ({
-          projectId: rest.projectId,
-          activityId: rest.activityId,
-          comments: rest.comments || "",
-          monday: Number(rest.monday) || 0,
-          tuesday: Number(rest.tuesday) || 0,
-          wednesday: Number(rest.wednesday) || 0,
-          thursday: Number(rest.thursday) || 0,
-          friday: Number(rest.friday) || 0,
-          saturday: Number(rest.saturday) || 0,
-          sunday: Number(rest.sunday) || 0,
-        }))
-      };
-      
-      await updateTimesheet.mutateAsync({ timesheetId: id, data });
+      await updateTimesheet.mutateAsync({ timesheetId: id, data: { rows: buildPayloadRows() } });
       toast({ title: "Timesheet saved successfully" });
-    } catch (err) {
+    } catch {
       toast({ title: "Failed to save timesheet", variant: "destructive" });
     }
   };
@@ -81,17 +94,17 @@ export default function TimesheetDetail() {
   const handleSubmit = async () => {
     if (!id) return;
     try {
-      await handleSave(); // Save first
+      await handleSave();
       await submitTimesheet.mutateAsync({ timesheetId: id });
       toast({ title: "Timesheet submitted for approval" });
       setLocation("/timesheets");
-    } catch (err) {
+    } catch {
       toast({ title: "Failed to submit timesheet", variant: "destructive" });
     }
   };
 
   if (isLoading) return <div className="p-8"><Skeleton className="h-[400px] w-full" /></div>;
-  if (!timesheet) return <div>Timesheet not found</div>;
+  if (!timesheet) return <div className="p-8 text-muted-foreground">Timesheet not found</div>;
 
   return (
     <div className="space-y-6">
@@ -123,17 +136,14 @@ export default function TimesheetDetail() {
             <table className="w-full text-sm text-left">
               <thead className="bg-muted text-muted-foreground font-medium">
                 <tr>
-                  <th className="p-3 w-48 min-w-[200px]">Project</th>
-                  <th className="p-3 w-48 min-w-[200px]">Activity</th>
-                  <th className="p-3 w-16 text-center">Mon</th>
-                  <th className="p-3 w-16 text-center">Tue</th>
-                  <th className="p-3 w-16 text-center">Wed</th>
-                  <th className="p-3 w-16 text-center">Thu</th>
-                  <th className="p-3 w-16 text-center">Fri</th>
-                  <th className="p-3 w-16 text-center">Sat</th>
-                  <th className="p-3 w-16 text-center">Sun</th>
+                  <th className="p-3 w-44 min-w-[180px]">Project</th>
+                  <th className="p-3 w-44 min-w-[180px]">Activity</th>
+                  {DAY_LABELS.map(d => (
+                    <th key={d} className="p-3 w-14 text-center">{d}</th>
+                  ))}
                   <th className="p-3 w-20 text-right font-bold">Total</th>
-                  {isEditable && <th className="p-3 w-12 text-center"></th>}
+                  <th className="p-3 min-w-[160px]">Comments</th>
+                  {isEditable && <th className="p-3 w-20 text-center"></th>}
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -148,7 +158,7 @@ export default function TimesheetDetail() {
                           </SelectContent>
                         </Select>
                       ) : (
-                        <div className="px-3">{row.projectName}</div>
+                        <div className="px-3 text-sm">{row.projectName}</div>
                       )}
                     </td>
                     <td className="p-2">
@@ -160,47 +170,64 @@ export default function TimesheetDetail() {
                           </SelectContent>
                         </Select>
                       ) : (
-                        <div className="px-3">{row.activityName}</div>
+                        <div className="px-3 text-sm">{row.activityName}</div>
                       )}
                     </td>
-                    {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => (
+                    {DAYS.map(day => (
                       <td key={day} className="p-2">
                         {isEditable ? (
-                          <Input 
-                            type="number" min="0" max="24" step="0.5" className="w-16 h-8 text-center px-1" 
-                            value={row[day] || ""} onChange={(e) => updateRow(row.rowId, day, e.target.value)} 
+                          <Input
+                            type="number" min="0" max="24" step="0.5" className="w-14 h-8 text-center px-1"
+                            value={row[day] || ""} onChange={(e) => updateRow(row.rowId, day, e.target.value)}
                           />
                         ) : (
-                          <div className="text-center">{row[day]}</div>
+                          <div className="text-center">{row[day] || 0}</div>
                         )}
                       </td>
                     ))}
                     <td className="p-3 text-right font-semibold text-primary">
                       {calculateRowTotal(row)}
                     </td>
+                    <td className="p-2">
+                      {isEditable ? (
+                        <Input
+                          placeholder="Optional comments..."
+                          className="h-8 text-xs"
+                          value={row.comments || ""}
+                          onChange={(e) => updateRow(row.rowId, "comments", e.target.value)}
+                        />
+                      ) : (
+                        <div className="px-3 text-xs text-muted-foreground">{row.comments}</div>
+                      )}
+                    </td>
                     {isEditable && (
                       <td className="p-2 text-center">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeRow(row.rowId)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1 justify-center">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" title="Duplicate row" onClick={() => duplicateRow(row.rowId)}>
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="Delete row" onClick={() => removeRow(row.rowId)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </td>
                     )}
                   </tr>
                 ))}
                 <tr className="bg-muted/30 font-semibold">
                   <td colSpan={2} className="p-3 text-right">Grand Total:</td>
-                  {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => (
+                  {DAYS.map(day => (
                     <td key={day} className="p-3 text-center">
                       {rows.reduce((sum, row) => sum + (Number(row[day]) || 0), 0)}
                     </td>
                   ))}
                   <td className="p-3 text-right text-lg text-primary">{calculateGrandTotal()}</td>
-                  {isEditable && <td></td>}
+                  <td colSpan={isEditable ? 2 : 1}></td>
                 </tr>
               </tbody>
             </table>
           </div>
-          
+
           {isEditable && (
             <div className="mt-4">
               <Button variant="outline" onClick={addRow}>

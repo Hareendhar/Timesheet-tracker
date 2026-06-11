@@ -28,7 +28,11 @@ router.get("/export/employees", requireAuth, requireRole("Admin"), async (req, r
 
 router.get("/export/timesheets", requireAuth, requireRole("Admin", "Manager"), async (req, res) => {
   try {
-    const result = await timesheetRepo.findAll({ pageSize: 10000, ...(req.query.dateFrom ? {} : {}) });
+    const user = (req.session as any).user;
+    const params: any = { pageSize: 10000 };
+    // Managers can only export their direct reports' timesheets
+    if (user.role === "Manager") params.managerId = user.id;
+    const result = await timesheetRepo.findAll(params);
     const flat = result.data.map((ts: any) => ({
       employeeName: ts.employeeName,
       weekStartDate: ts.weekStartDate,

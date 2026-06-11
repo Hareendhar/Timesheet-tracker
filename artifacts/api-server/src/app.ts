@@ -35,10 +35,14 @@ app.use(cors({
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
+if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET environment variable must be set in production");
+}
+
 app.use(
   session({
     store: new PgStore({ pool, createTableIfMissing: true }),
-    secret: process.env.SESSION_SECRET || "versatile-timesheet-secret-key-2024",
+    secret: process.env.SESSION_SECRET || "dev-only-insecure-session-secret",
     resave: false,
     saveUninitialized: false,
     cookie: {

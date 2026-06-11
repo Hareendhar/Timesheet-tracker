@@ -4,11 +4,17 @@ import { useCreateTimesheet, useListProjects, useListActivities, useGetCurrentUs
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from "date-fns";
+
+const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+function emptyRow() {
+  return { id: crypto.randomUUID(), projectId: "", activityId: "", monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0, comments: "" };
+}
 
 export default function TimesheetNew() {
   const [, setLocation] = useLocation();
@@ -19,80 +25,83 @@ export default function TimesheetNew() {
   const createTimesheet = useCreateTimesheet();
   const copyPrevious = useCopyPreviousWeek();
 
-  // Basic weekly selection
   const [currentDate, setCurrentDate] = useState(new Date());
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
 
-  const [rows, setRows] = useState<any[]>([
-    { id: crypto.randomUUID(), projectId: "", activityId: "", monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0, comments: "" }
-  ]);
+  const [rows, setRows] = useState<any[]>([emptyRow()]);
 
-  const addRow = () => {
-    setRows([...rows, { id: crypto.randomUUID(), projectId: "", activityId: "", monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0, comments: "" }]);
-  };
+  const addRow = () => setRows([...rows, emptyRow()]);
 
   const removeRow = (id: string) => {
+    if (rows.length === 1) return;
     setRows(rows.filter(r => r.id !== id));
+  };
+
+  const duplicateRow = (id: string) => {
+    const row = rows.find(r => r.id === id);
+    if (!row) return;
+    const idx = rows.findIndex(r => r.id === id);
+    const copy = { ...row, id: crypto.randomUUID() };
+    const newRows = [...rows];
+    newRows.splice(idx + 1, 0, copy);
+    setRows(newRows);
   };
 
   const updateRow = (id: string, field: string, value: any) => {
     setRows(rows.map(r => r.id === id ? { ...r, [field]: value } : r));
   };
 
-  const calculateRowTotal = (row: any) => {
-    return (Number(row.monday) || 0) + (Number(row.tuesday) || 0) + (Number(row.wednesday) || 0) + (Number(row.thursday) || 0) + (Number(row.friday) || 0) + (Number(row.saturday) || 0) + (Number(row.sunday) || 0);
-  };
+  const calculateRowTotal = (row: any) =>
+    DAYS.reduce((sum, d) => sum + (Number(row[d]) || 0), 0);
 
-  const calculateGrandTotal = () => {
-    return rows.reduce((sum, row) => sum + calculateRowTotal(row), 0);
-  };
+  const calculateGrandTotal = () =>
+    rows.reduce((sum, row) => sum + calculateRowTotal(row), 0);
+
+  const buildPayloadRows = () =>
+    rows.map(({ id, ...rest }) => ({
+      projectId: rest.projectId,
+      activityId: rest.activityId,
+      comments: rest.comments || "",
+      monday: Number(rest.monday) || 0,
+      tuesday: Number(rest.tuesday) || 0,
+      wednesday: Number(rest.wednesday) || 0,
+      thursday: Number(rest.thursday) || 0,
+      friday: Number(rest.friday) || 0,
+      saturday: Number(rest.saturday) || 0,
+      sunday: Number(rest.sunday) || 0,
+    }));
 
   const handleSaveDraft = async () => {
-    if (!user?.employeeId) return;
+    if (!user?.id) return;
     try {
       const data = {
         employeeId: user.id,
         weekStartDate: format(weekStart, "yyyy-MM-dd"),
         status: "Draft" as const,
-        rows: rows.map(({ id, ...rest }) => ({
-          projectId: rest.projectId,
-          activityId: rest.activityId,
-          comments: rest.comments || "",
-          monday: Number(rest.monday) || 0,
-          tuesday: Number(rest.tuesday) || 0,
-          wednesday: Number(rest.wednesday) || 0,
-          thursday: Number(rest.thursday) || 0,
-          friday: Number(rest.friday) || 0,
-          saturday: Number(rest.saturday) || 0,
-          sunday: Number(rest.sunday) || 0,
-        }))
+        rows: buildPayloadRows(),
       };
-      
       const res = await createTimesheet.mutateAsync({ data });
       toast({ title: "Draft saved successfully" });
       setLocation(`/timesheets/${res.id}`);
-    } catch (err) {
+    } catch {
       toast({ title: "Failed to save draft", variant: "destructive" });
     }
   };
 
   const handleCopyPrevious = async () => {
-    if (!user?.employeeId) return;
+    if (!user?.id) return;
     try {
-      const sourceWeek = format(subWeeks(weekStart, 1), "yyyy-MM-dd");
-      const targetWeek = format(weekStart, "yyyy-MM-dd");
-      
-      const res = await copyPrevious.mutateAsync({ 
-        data: { 
-          employeeId: user.id, 
-          sourceWeekStartDate: sourceWeek, 
-          targetWeekStartDate: targetWeek 
-        } 
+      const res = await copyPrevious.mutateAsync({
+        data: {
+          employeeId: user.id,
+          sourceWeekStartDate: format(subWeeks(weekStart, 1), "yyyy-MM-dd"),
+          targetWeekStartDate: format(weekStart, "yyyy-MM-dd"),
+        }
       });
       toast({ title: "Previous week copied" });
       setLocation(`/timesheets/${res.id}`);
-    } catch (err) {
+    } catch {
       toast({ title: "Failed to copy previous week", variant: "destructive" });
     }
   };
@@ -128,17 +137,14 @@ export default function TimesheetNew() {
             <table className="w-full text-sm text-left">
               <thead className="bg-muted text-muted-foreground font-medium">
                 <tr>
-                  <th className="p-3 w-48 min-w-[200px]">Project</th>
-                  <th className="p-3 w-48 min-w-[200px]">Activity</th>
-                  <th className="p-3 w-16 text-center">Mon</th>
-                  <th className="p-3 w-16 text-center">Tue</th>
-                  <th className="p-3 w-16 text-center">Wed</th>
-                  <th className="p-3 w-16 text-center">Thu</th>
-                  <th className="p-3 w-16 text-center">Fri</th>
-                  <th className="p-3 w-16 text-center">Sat</th>
-                  <th className="p-3 w-16 text-center">Sun</th>
+                  <th className="p-3 w-44 min-w-[180px]">Project</th>
+                  <th className="p-3 w-44 min-w-[180px]">Activity</th>
+                  {DAY_LABELS.map(d => (
+                    <th key={d} className="p-3 w-14 text-center">{d}</th>
+                  ))}
                   <th className="p-3 w-20 text-right font-bold">Total</th>
-                  <th className="p-3 w-12 text-center"></th>
+                  <th className="p-3 min-w-[160px]">Comments</th>
+                  <th className="p-3 w-20 text-center"></th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -168,43 +174,53 @@ export default function TimesheetNew() {
                         </SelectContent>
                       </Select>
                     </td>
-                    {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => (
+                    {DAYS.map(day => (
                       <td key={day} className="p-2">
-                        <Input 
-                          type="number" 
-                          min="0" 
-                          max="24" 
-                          step="0.5"
-                          className="w-16 h-8 text-center px-1" 
-                          value={row[day] || ""} 
-                          onChange={(e) => updateRow(row.id, day, e.target.value)} 
+                        <Input
+                          type="number" min="0" max="24" step="0.5"
+                          className="w-14 h-8 text-center px-1"
+                          value={row[day] || ""}
+                          onChange={(e) => updateRow(row.id, day, e.target.value)}
                         />
                       </td>
                     ))}
                     <td className="p-3 text-right font-semibold text-primary">
                       {calculateRowTotal(row)}
                     </td>
+                    <td className="p-2">
+                      <Input
+                        placeholder="Optional comments..."
+                        className="h-8 text-xs"
+                        value={row.comments || ""}
+                        onChange={(e) => updateRow(row.id, "comments", e.target.value)}
+                      />
+                    </td>
                     <td className="p-2 text-center">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeRow(row.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1 justify-center">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" title="Duplicate row" onClick={() => duplicateRow(row.id)}>
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="Delete row" onClick={() => removeRow(row.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
                 <tr className="bg-muted/30 font-semibold">
                   <td colSpan={2} className="p-3 text-right">Grand Total:</td>
-                  {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => (
+                  {DAYS.map(day => (
                     <td key={day} className="p-3 text-center">
                       {rows.reduce((sum, row) => sum + (Number(row[day]) || 0), 0)}
                     </td>
                   ))}
                   <td className="p-3 text-right text-lg text-primary">{calculateGrandTotal()}</td>
-                  <td></td>
+                  <td colSpan={2}></td>
                 </tr>
               </tbody>
             </table>
           </div>
-          
+
           <div className="mt-4">
             <Button variant="outline" onClick={addRow}>
               <Plus className="mr-2 h-4 w-4" /> Add Row

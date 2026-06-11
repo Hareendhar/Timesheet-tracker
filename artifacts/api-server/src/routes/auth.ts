@@ -19,10 +19,10 @@ router.get("/auth/google", (req, res) => {
 router.get("/auth/google/callback", async (req, res) => {
   try {
     const { code, state } = req.query;
-    if (!code) { res.redirect("/?error=no_code"); return; }
+    if (!code) { res.redirect("/login?error=no_code"); return; }
     // Validate CSRF state
     const expectedState = (req.session as any).oauthState;
-    if (!state || !expectedState || state !== expectedState) { res.redirect("/?error=invalid_state"); return; }
+    if (!state || !expectedState || state !== expectedState) { res.redirect("/login?error=invalid_state"); return; }
     delete (req.session as any).oauthState;
 
     const clientId = process.env.GOOGLE_CLIENT_ID!;
@@ -36,7 +36,7 @@ router.get("/auth/google/callback", async (req, res) => {
       body: new URLSearchParams({ code: code as string, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: "authorization_code" }),
     });
     const tokens = await tokenRes.json() as any;
-    if (!tokens.access_token) { res.redirect("/?error=token_exchange_failed"); return; }
+    if (!tokens.access_token) { res.redirect("/login?error=token_exchange_failed"); return; }
 
     // Get user info
     const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -48,7 +48,7 @@ router.get("/auth/google/callback", async (req, res) => {
     // Look up employee
     const employee = await employeeRepo.findByEmail(email);
     if (!employee || employee.status === "Inactive") {
-      res.redirect("/?error=not_configured"); return;
+      res.redirect("/login?error=not_configured"); return;
     }
 
     (req.session as any).user = {
@@ -65,7 +65,7 @@ router.get("/auth/google/callback", async (req, res) => {
 
     res.redirect("/");
   } catch (err) {
-    res.redirect("/?error=auth_error");
+    res.redirect("/login?error=auth_error");
   }
 });
 
