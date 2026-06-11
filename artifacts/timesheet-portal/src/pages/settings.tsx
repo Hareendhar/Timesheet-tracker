@@ -1,4 +1,4 @@
-import { useGetCurrentUser, useGetEmployeeProfile } from "@workspace/api-client-react";
+import { useGetCurrentUser, useGetEmployeeProfile, getGetEmployeeProfileQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 export default function Settings() {
   const { data: user } = useGetCurrentUser();
   const { data: profile, isLoading } = useGetEmployeeProfile(user?.employeeId || "", {
-    query: { enabled: !!user?.employeeId }
+    query: { enabled: !!user?.employeeId, queryKey: getGetEmployeeProfileQueryKey(user?.employeeId || "") }
   });
 
   const isAdmin = user?.role === "Admin";
@@ -49,7 +49,7 @@ export default function Settings() {
                   </Avatar>
                   <div>
                     <h3 className="text-2xl font-bold">{user.name}</h3>
-                    <p className="text-muted-foreground">{profile.designation}</p>
+                    <p className="text-muted-foreground">{profile.employee.designation}</p>
                   </div>
                 </div>
                 
@@ -72,7 +72,7 @@ export default function Settings() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Department</p>
-                      <p className="text-sm font-medium">{profile.department}</p>
+                      <p className="text-sm font-medium">{profile.employee.department}</p>
                     </div>
                   </div>
                   
@@ -92,7 +92,7 @@ export default function Settings() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Manager</p>
-                      <p className="text-sm font-medium">{profile.managerName || "None"}</p>
+                      <p className="text-sm font-medium">{profile.employee.managerId || "None"}</p>
                     </div>
                   </div>
                 </div>

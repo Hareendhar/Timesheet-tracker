@@ -48,7 +48,7 @@ export default function Projects() {
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
             </div>
-          ) : projects?.items && projects.items.length > 0 ? (
+          ) : projects?.data && projects.data.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -60,7 +60,7 @@ export default function Projects() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {projects.items.map((project) => (
+                  {projects.data.map((project) => (
                     <TableRow key={project.id}>
                       <TableCell className="font-mono text-sm">{project.projectCode}</TableCell>
                       <TableCell className="font-medium">{project.name}</TableCell>

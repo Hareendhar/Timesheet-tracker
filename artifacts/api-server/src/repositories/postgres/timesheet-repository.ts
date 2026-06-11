@@ -1,4 +1,4 @@
-import { db } from "@workspace/db";
+import { db, pool } from "@workspace/db";
 import { timesheetsTable, timesheetRowsTable, employeesTable, projectsTable, activitiesTable } from "@workspace/db";
 import { eq, and, sql, inArray } from "drizzle-orm";
 import { generateId } from "../../lib/id.js";
@@ -56,8 +56,8 @@ export class PostgresTimesheetRepository implements ITimesheetRepository {
     if (params.weekStartDate) { conditions.push(`t.week_start_date = $${idx++}`); values.push(params.weekStartDate); }
 
     const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
-    const countResult = await db.execute(sql.raw(`SELECT COUNT(*) as count FROM (${baseQuery}${whereClause}) sub`, values));
-    const rowsResult = await db.execute(sql.raw(`${baseQuery}${whereClause} ORDER BY t.week_start_date DESC, t.created_at DESC LIMIT ${pageSize} OFFSET ${offset}`, values));
+    const countResult = await pool.query(`SELECT COUNT(*) as count FROM (${baseQuery}${whereClause}) sub`, values);
+    const rowsResult = await pool.query(`${baseQuery}${whereClause} ORDER BY t.week_start_date DESC, t.created_at DESC LIMIT ${pageSize} OFFSET ${offset}`, values);
 
     const rows = rowsResult.rows as any[];
     const total = Number((countResult.rows as any[])[0]?.count || 0);

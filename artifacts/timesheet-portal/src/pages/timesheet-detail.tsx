@@ -1,5 +1,5 @@
 import { useParams, useLocation } from "wouter";
-import { useGetTimesheet, useUpdateTimesheet, useSubmitTimesheet, useListProjects, useListActivities, useGetCurrentUser } from "@workspace/api-client-react";
+import { useGetTimesheet, useUpdateTimesheet, useSubmitTimesheet, useListProjects, useListActivities, useGetCurrentUser, getGetTimesheetQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ export default function TimesheetDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { data: user } = useGetCurrentUser();
-  const { data: timesheet, isLoading } = useGetTimesheet(id || "", { query: { enabled: !!id } });
+  const { data: timesheet, isLoading } = useGetTimesheet(id || "", { query: { enabled: !!id, queryKey: getGetTimesheetQueryKey(id || "") } });
   const { data: projects } = useListProjects({ pageSize: 100 });
   const { data: activities } = useListActivities();
   
@@ -145,7 +145,7 @@ export default function TimesheetDetail() {
                         <Select value={row.projectId} onValueChange={(val) => updateRow(row.rowId, "projectId", val)}>
                           <SelectTrigger className="w-full h-8"><SelectValue placeholder="Select Project" /></SelectTrigger>
                           <SelectContent>
-                            {projects?.items?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                            {projects?.data?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       ) : (

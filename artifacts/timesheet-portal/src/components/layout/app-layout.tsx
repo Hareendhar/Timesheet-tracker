@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { useGetCurrentUser, useLogout, useListNotifications } from "@workspace/api-client-react";
+import { useGetCurrentUser, useLogout, useListNotifications, getGetCurrentUserQueryKey, getListNotificationsQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LayoutDashboard, Clock, CheckSquare, Users, Building, Briefcase, Activity, Bell, Search, Settings, LogOut, FileText, Menu } from "lucide-react";
@@ -24,13 +24,13 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const [location, setLocation] = useLocation();
   const { data: user, isLoading, isError } = useGetCurrentUser({
-    query: { retry: false },
+    query: { retry: false, queryKey: getGetCurrentUserQueryKey() },
   });
   const logout = useLogout();
   
   const { data: notifications } = useListNotifications(
     { unreadOnly: true, pageSize: 5 },
-    { query: { enabled: !!user } }
+    { query: { enabled: !!user, queryKey: getListNotificationsQueryKey({ unreadOnly: true, pageSize: 5 }) } }
   );
 
   useEffect(() => {

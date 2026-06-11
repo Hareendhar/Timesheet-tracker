@@ -7,7 +7,7 @@ const router = Router();
 router.get("/search", requireAuth, async (req, res) => {
   try {
     const q = (req.query.q as string) || "";
-    if (!q.trim()) return res.json({ employees: [], projects: [], clients: [] });
+    if (!q.trim()) { res.json({ employees: [], projects: [], clients: [] }); return; }
     const [employees, projects, clients] = await Promise.all([
       employeeRepo.findAll({ search: q, pageSize: 5 }),
       projectRepo.findAll({ search: q, pageSize: 5 }),

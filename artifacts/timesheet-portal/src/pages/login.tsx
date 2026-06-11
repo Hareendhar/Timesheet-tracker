@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { useGetCurrentUser } from "@workspace/api-client-react";
+import { useGetCurrentUser, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
@@ -10,6 +10,7 @@ export function Login() {
   const { data: user, isLoading } = useGetCurrentUser({
     query: {
       retry: false,
+      queryKey: getGetCurrentUserQueryKey(),
     }
   });
 

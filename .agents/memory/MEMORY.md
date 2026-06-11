@@ -1,3 +1,6 @@
-- [Timesheet Portal Architecture](timesheet-portal-arch.md) — full-stack timesheet app: Express API at /api, React+Vite frontend at /, PostgreSQL+Drizzle
-- [Google OAuth Setup](google-oauth-setup.md) — custom OAuth flow (no passport), requires GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET secrets
-- [DB Seed Users](db-seed-users.md) — demo employees seeded; emails must match Google accounts for login to work
+- [API response shape](api-response-shape.md) — all list endpoints return `{data, total, page, pageSize}` NOT `.items`; use `.data` everywhere
+- [Route handler void pattern](route-handler-void.md) — Express handlers must stay void: use `res.xxx(); return;` NOT `return res.xxx()`
+- [EmployeeProfile shape](employee-profile-shape.md) — nested: `profile.employee.*`, `profile.metrics.*` with fields totalSubmitted/approved/rejected/pending/approvalRate
+- [Dashboard API fields](dashboard-api-fields.md) — DashboardStats has no missingTimesheets/approvedThisWeek/totalHoursLogged; use timesheetsApproved/totalEmployees/complianceRate
+- [ActivityFeedItem fields](activity-feed-fields.md) — fields are employeeName+action+timestamp+weekStartDate (NOT userName/createdAt)
+- [pool.query for raw SQL](pool-query-raw.md) — Drizzle sql.raw() only takes 1 arg; use imported `pool` from @workspace/db for parameterized raw queries

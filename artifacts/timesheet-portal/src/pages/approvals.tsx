@@ -74,7 +74,7 @@ export default function Approvals() {
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
-          ) : timesheets?.items && timesheets.items.length > 0 ? (
+          ) : timesheets?.data && timesheets.data.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -87,7 +87,7 @@ export default function Approvals() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {timesheets.items.map((ts) => (
+                  {timesheets.data.map((ts) => (
                     <TableRow key={ts.id}>
                       <TableCell className="font-medium">
                         <div>{ts.employeeName}</div>

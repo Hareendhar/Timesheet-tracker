@@ -22,8 +22,9 @@ router.post("/clients", requireAuth, requireRole("Admin"), async (req, res) => {
 
 router.get("/clients/:clientId", requireAuth, async (req, res) => {
   try {
-    const client = await clientRepo.findById(req.params.clientId);
-    if (!client) return res.status(404).json({ error: "Not found" });
+    const clientId = req.params.clientId as string;
+    const client = await clientRepo.findById(clientId);
+    if (!client) { res.status(404).json({ error: "Not found" }); return; }
     res.json(client);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -31,9 +32,10 @@ router.get("/clients/:clientId", requireAuth, async (req, res) => {
 router.patch("/clients/:clientId", requireAuth, requireRole("Admin"), async (req, res) => {
   try {
     const user = (req.session as any).user;
-    const old = await clientRepo.findById(req.params.clientId);
-    const client = await clientRepo.update(req.params.clientId, req.body);
-    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Client Updated", entityType: "Client", entityId: req.params.clientId, oldValue: JSON.stringify(old), newValue: JSON.stringify(req.body), ipAddress: getClientIp(req) });
+    const clientId = req.params.clientId as string;
+    const old = await clientRepo.findById(clientId);
+    const client = await clientRepo.update(clientId, req.body);
+    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Client Updated", entityType: "Client", entityId: clientId, oldValue: JSON.stringify(old), newValue: JSON.stringify(req.body), ipAddress: getClientIp(req) });
     res.json(client);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -41,8 +43,9 @@ router.patch("/clients/:clientId", requireAuth, requireRole("Admin"), async (req
 router.delete("/clients/:clientId", requireAuth, requireRole("Admin"), async (req, res) => {
   try {
     const user = (req.session as any).user;
-    await clientRepo.delete(req.params.clientId);
-    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Client Deleted", entityType: "Client", entityId: req.params.clientId, ipAddress: getClientIp(req) });
+    const clientId = req.params.clientId as string;
+    await clientRepo.delete(clientId);
+    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Client Deleted", entityType: "Client", entityId: clientId, ipAddress: getClientIp(req) });
     res.json({ ok: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });

@@ -148,7 +148,7 @@ export default function TimesheetNew() {
                           <SelectValue placeholder="Select Project" />
                         </SelectTrigger>
                         <SelectContent>
-                          {projects?.items?.map(p => (
+                          {projects?.data?.map(p => (
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                           ))}
                         </SelectContent>

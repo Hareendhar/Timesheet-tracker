@@ -1,4 +1,4 @@
-import { useListTimesheets, useGetCurrentUser } from "@workspace/api-client-react";
+import { useListTimesheets, useGetCurrentUser, getListTimesheetsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Eye, MoreHorizontal, Clock } from "lucide-react";
@@ -23,9 +23,10 @@ import {
 
 export default function Timesheets() {
   const { data: user } = useGetCurrentUser();
+  const tsParams = { employeeId: user?.employeeId, pageSize: 20 };
   const { data: timesheets, isLoading } = useListTimesheets(
-    { employeeId: user?.employeeId, pageSize: 20 },
-    { query: { enabled: !!user?.employeeId } }
+    tsParams,
+    { query: { enabled: !!user?.employeeId, queryKey: getListTimesheetsQueryKey(tsParams) } }
   );
 
   const getStatusBadge = (status: string) => {
@@ -62,7 +63,7 @@ export default function Timesheets() {
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
-          ) : timesheets?.items && timesheets.items.length > 0 ? (
+          ) : timesheets?.data && timesheets.data.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -75,7 +76,7 @@ export default function Timesheets() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {timesheets.items.map((ts) => (
+                  {timesheets.data.map((ts) => (
                     <TableRow key={ts.id}>
                       <TableCell className="font-medium">
                         {format(parseISO(ts.weekStartDate), "MMM d, yyyy")} - {format(parseISO(ts.weekEndDate), "MMM d, yyyy")}

@@ -20,7 +20,7 @@ router.get("/notifications", requireAuth, async (req, res) => {
 router.patch("/notifications/:notificationId/read", requireAuth, async (req, res) => {
   try {
     const user = (req.session as any).user;
-    await notificationRepo.markRead(req.params.notificationId, user.id);
+    await notificationRepo.markRead(req.params.notificationId as string, user.id);
     res.json({ ok: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });

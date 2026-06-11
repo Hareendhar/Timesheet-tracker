@@ -62,9 +62,9 @@ export default function Notifications() {
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
             </div>
-          ) : notifications?.items && notifications.items.length > 0 ? (
+          ) : notifications?.data && notifications.data.length > 0 ? (
             <div className="space-y-4">
-              {notifications.items.map((notification) => (
+              {notifications.data.map((notification) => (
                 <div 
                   key={notification.id} 
                   className={`flex items-start gap-4 p-4 rounded-lg border ${!notification.isRead ? 'bg-primary/5 border-primary/20' : 'bg-card'}`}

@@ -59,7 +59,7 @@ export default function Employees() {
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
             </div>
-          ) : employees?.items && employees.items.length > 0 ? (
+          ) : employees?.data && employees.data.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -72,7 +72,7 @@ export default function Employees() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {employees.items.map((emp) => (
+                  {employees.data.map((emp) => (
                     <TableRow key={emp.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">

@@ -37,7 +37,7 @@ export default function Activities() {
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
-          ) : activities?.length > 0 ? (
+          ) : (activities?.length ?? 0) > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -47,7 +47,7 @@ export default function Activities() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {activities.map((activity) => (
+                  {(activities ?? []).map((activity) => (
                     <TableRow key={activity.id}>
                       <TableCell className="font-medium">{activity.name}</TableCell>
                       <TableCell>

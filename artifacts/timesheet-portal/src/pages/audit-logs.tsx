@@ -30,7 +30,7 @@ export default function AuditLogs() {
             <div className="space-y-4">
               {[...Array(10)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
-          ) : logs?.items && logs.items.length > 0 ? (
+          ) : logs?.data && logs.data.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -44,7 +44,7 @@ export default function AuditLogs() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {logs.items.map((log) => (
+                  {logs.data.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell className="text-sm">
                         {format(parseISO(log.createdAt), "MMM d, yyyy HH:mm:ss")}

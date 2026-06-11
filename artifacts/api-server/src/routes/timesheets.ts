@@ -49,19 +49,20 @@ router.post("/timesheets", requireAuth, async (req, res) => {
     const user = (req.session as any).user;
     const { employeeId, weekStartDate, rows } = req.body;
     const existing = await timesheetRepo.findByEmployeeAndWeek(employeeId, weekStartDate);
-    if (existing && existing.status !== "Draft") return res.status(400).json({ error: "A non-draft timesheet for this week already exists" });
+    if (existing && existing.status !== "Draft") { res.status(400).json({ error: "A non-draft timesheet for this week already exists" }); return; }
     let ts;
     if (existing) ts = await timesheetRepo.update(existing.id, rows);
     else ts = await timesheetRepo.create({ employeeId, weekStartDate }, rows);
-    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Created/Updated", entityType: "Timesheet", entityId: ts.id, ipAddress: getClientIp(req) });
+    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Created/Updated", entityType: "Timesheet", entityId: ts?.id ?? "", ipAddress: getClientIp(req) });
     res.status(201).json(ts);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 router.get("/timesheets/:timesheetId", requireAuth, async (req, res) => {
   try {
-    const ts = await timesheetRepo.findById(req.params.timesheetId);
-    if (!ts) return res.status(404).json({ error: "Not found" });
+    const timesheetId = req.params.timesheetId as string;
+    const ts = await timesheetRepo.findById(timesheetId);
+    if (!ts) { res.status(404).json({ error: "Not found" }); return; }
     res.json(ts);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -69,10 +70,11 @@ router.get("/timesheets/:timesheetId", requireAuth, async (req, res) => {
 router.patch("/timesheets/:timesheetId", requireAuth, async (req, res) => {
   try {
     const user = (req.session as any).user;
+    const timesheetId = req.params.timesheetId as string;
     const { rows } = req.body;
-    const ts = await timesheetRepo.update(req.params.timesheetId, rows);
-    if (!ts) return res.status(400).json({ error: "Cannot update non-draft timesheet" });
-    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Updated", entityType: "Timesheet", entityId: req.params.timesheetId, ipAddress: getClientIp(req) });
+    const ts = await timesheetRepo.update(timesheetId, rows);
+    if (!ts) { res.status(400).json({ error: "Cannot update non-draft timesheet" }); return; }
+    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Updated", entityType: "Timesheet", entityId: timesheetId, ipAddress: getClientIp(req) });
     res.json(ts);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -80,11 +82,11 @@ router.patch("/timesheets/:timesheetId", requireAuth, async (req, res) => {
 router.post("/timesheets/:timesheetId/submit", requireAuth, async (req, res) => {
   try {
     const user = (req.session as any).user;
-    const ts = await timesheetRepo.submit(req.params.timesheetId);
-    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Submitted", entityType: "Timesheet", entityId: req.params.timesheetId, ipAddress: getClientIp(req) });
-    // Notify manager
+    const timesheetId = req.params.timesheetId as string;
+    const ts = await timesheetRepo.submit(timesheetId);
+    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Submitted", entityType: "Timesheet", entityId: timesheetId, ipAddress: getClientIp(req) });
     if (user.managerId) {
-      await notificationRepo.create({ userId: user.managerId, type: "TIMESHEET_SUBMITTED", title: "Timesheet Awaiting Approval", message: `${user.name} submitted a timesheet for week of ${ts?.weekStartDate}.`, relatedId: req.params.timesheetId, isRead: false });
+      await notificationRepo.create({ userId: user.managerId, type: "TIMESHEET_SUBMITTED", title: "Timesheet Awaiting Approval", message: `${user.name} submitted a timesheet for week of ${ts?.weekStartDate}.`, relatedId: timesheetId, isRead: false });
     }
     res.json(ts);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -93,10 +95,11 @@ router.post("/timesheets/:timesheetId/submit", requireAuth, async (req, res) => 
 router.post("/timesheets/:timesheetId/approve", requireAuth, requireRole("Manager", "Admin"), async (req, res) => {
   try {
     const user = (req.session as any).user;
+    const timesheetId = req.params.timesheetId as string;
     const { comment } = req.body || {};
-    const ts = await timesheetRepo.approve(req.params.timesheetId, user.id, comment);
-    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Approved", entityType: "Timesheet", entityId: req.params.timesheetId, ipAddress: getClientIp(req) });
-    if (ts) await notificationRepo.create({ userId: ts.employeeId, type: "TIMESHEET_APPROVED", title: "Timesheet Approved", message: `Your timesheet for week of ${ts.weekStartDate} has been approved.`, relatedId: req.params.timesheetId, isRead: false });
+    const ts = await timesheetRepo.approve(timesheetId, user.id, comment);
+    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Approved", entityType: "Timesheet", entityId: timesheetId, ipAddress: getClientIp(req) });
+    if (ts) await notificationRepo.create({ userId: ts.employeeId, type: "TIMESHEET_APPROVED", title: "Timesheet Approved", message: `Your timesheet for week of ${ts.weekStartDate} has been approved.`, relatedId: timesheetId, isRead: false });
     res.json(ts);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -104,10 +107,11 @@ router.post("/timesheets/:timesheetId/approve", requireAuth, requireRole("Manage
 router.post("/timesheets/:timesheetId/reject", requireAuth, requireRole("Manager", "Admin"), async (req, res) => {
   try {
     const user = (req.session as any).user;
+    const timesheetId = req.params.timesheetId as string;
     const { comment } = req.body;
-    const ts = await timesheetRepo.reject(req.params.timesheetId, comment);
-    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Rejected", entityType: "Timesheet", entityId: req.params.timesheetId, newValue: comment, ipAddress: getClientIp(req) });
-    if (ts) await notificationRepo.create({ userId: ts.employeeId, type: "TIMESHEET_REJECTED", title: "Timesheet Rejected", message: `Your timesheet for week of ${ts.weekStartDate} was rejected. Reason: ${comment}`, relatedId: req.params.timesheetId, isRead: false });
+    const ts = await timesheetRepo.reject(timesheetId, comment);
+    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Rejected", entityType: "Timesheet", entityId: timesheetId, newValue: comment, ipAddress: getClientIp(req) });
+    if (ts) await notificationRepo.create({ userId: ts.employeeId, type: "TIMESHEET_REJECTED", title: "Timesheet Rejected", message: `Your timesheet for week of ${ts.weekStartDate} was rejected. Reason: ${comment}`, relatedId: timesheetId, isRead: false });
     res.json(ts);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });

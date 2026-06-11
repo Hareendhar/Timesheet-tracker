@@ -15,15 +15,16 @@ router.post("/projects", requireAuth, requireRole("Admin"), async (req, res) => 
   try {
     const user = (req.session as any).user;
     const project = await projectRepo.create(req.body);
-    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Project Created", entityType: "Project", entityId: project.id, newValue: JSON.stringify(req.body), ipAddress: getClientIp(req) });
+    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Project Created", entityType: "Project", entityId: project?.id ?? "", newValue: JSON.stringify(req.body), ipAddress: getClientIp(req) });
     res.status(201).json(project);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 router.get("/projects/:projectId", requireAuth, async (req, res) => {
   try {
-    const project = await projectRepo.findById(req.params.projectId);
-    if (!project) return res.status(404).json({ error: "Not found" });
+    const projectId = req.params.projectId as string;
+    const project = await projectRepo.findById(projectId);
+    if (!project) { res.status(404).json({ error: "Not found" }); return; }
     res.json(project);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -31,9 +32,10 @@ router.get("/projects/:projectId", requireAuth, async (req, res) => {
 router.patch("/projects/:projectId", requireAuth, requireRole("Admin"), async (req, res) => {
   try {
     const user = (req.session as any).user;
-    const old = await projectRepo.findById(req.params.projectId);
-    const project = await projectRepo.update(req.params.projectId, req.body);
-    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Project Updated", entityType: "Project", entityId: req.params.projectId, oldValue: JSON.stringify(old), newValue: JSON.stringify(req.body), ipAddress: getClientIp(req) });
+    const projectId = req.params.projectId as string;
+    const old = await projectRepo.findById(projectId);
+    const project = await projectRepo.update(projectId, req.body);
+    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Project Updated", entityType: "Project", entityId: projectId, oldValue: JSON.stringify(old), newValue: JSON.stringify(req.body), ipAddress: getClientIp(req) });
     res.json(project);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -41,8 +43,9 @@ router.patch("/projects/:projectId", requireAuth, requireRole("Admin"), async (r
 router.delete("/projects/:projectId", requireAuth, requireRole("Admin"), async (req, res) => {
   try {
     const user = (req.session as any).user;
-    await projectRepo.delete(req.params.projectId);
-    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Project Deleted", entityType: "Project", entityId: req.params.projectId, ipAddress: getClientIp(req) });
+    const projectId = req.params.projectId as string;
+    await projectRepo.delete(projectId);
+    await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Project Deleted", entityType: "Project", entityId: projectId, ipAddress: getClientIp(req) });
     res.json({ ok: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });

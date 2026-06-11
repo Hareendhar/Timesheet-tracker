@@ -48,7 +48,7 @@ export default function Clients() {
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
             </div>
-          ) : clients?.items && clients.items.length > 0 ? (
+          ) : clients?.data && clients.data.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -59,7 +59,7 @@ export default function Clients() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {clients.items.map((client) => (
+                  {clients.data.map((client) => (
                     <TableRow key={client.id}>
                       <TableCell className="font-mono text-sm">{client.clientCode}</TableCell>
                       <TableCell className="font-medium">{client.name}</TableCell>
