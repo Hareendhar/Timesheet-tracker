@@ -1,10 +1,11 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { Login } from "@/pages/login";
 import { AppLayout } from "@/components/layout/app-layout";
+import { useGetCurrentUser, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
 
 import Dashboard from "@/pages/dashboard";
 import Timesheets from "@/pages/timesheets";
@@ -29,6 +30,15 @@ const queryClient = new QueryClient({
   },
 });
 
+function RequireRole({ roles, children }: { roles: string[]; children: React.ReactNode }) {
+  const { data: user, isLoading } = useGetCurrentUser({
+    query: { retry: false, queryKey: getGetCurrentUserQueryKey() },
+  });
+  if (isLoading) return null;
+  if (!user || !roles.includes(user.role)) return <Redirect to="/" />;
+  return <>{children}</>;
+}
+
 function Router() {
   return (
     <Switch>
@@ -40,14 +50,42 @@ function Router() {
             <Route path="/timesheets" component={Timesheets} />
             <Route path="/timesheets/new" component={TimesheetNew} />
             <Route path="/timesheets/:id" component={TimesheetDetail} />
-            <Route path="/approvals" component={Approvals} />
-            <Route path="/employees" component={Employees} />
-            <Route path="/employees/:id" component={EmployeeProfile} />
-            <Route path="/clients" component={Clients} />
-            <Route path="/projects" component={Projects} />
-            <Route path="/activities" component={Activities} />
+            <Route path="/approvals">
+              <RequireRole roles={["Manager", "Admin"]}>
+                <Approvals />
+              </RequireRole>
+            </Route>
+            <Route path="/employees">
+              <RequireRole roles={["Admin"]}>
+                <Employees />
+              </RequireRole>
+            </Route>
+            <Route path="/employees/:id">
+              <RequireRole roles={["Admin"]}>
+                <EmployeeProfile />
+              </RequireRole>
+            </Route>
+            <Route path="/clients">
+              <RequireRole roles={["Admin"]}>
+                <Clients />
+              </RequireRole>
+            </Route>
+            <Route path="/projects">
+              <RequireRole roles={["Admin"]}>
+                <Projects />
+              </RequireRole>
+            </Route>
+            <Route path="/activities">
+              <RequireRole roles={["Admin"]}>
+                <Activities />
+              </RequireRole>
+            </Route>
+            <Route path="/audit-logs">
+              <RequireRole roles={["Admin"]}>
+                <AuditLogs />
+              </RequireRole>
+            </Route>
             <Route path="/notifications" component={Notifications} />
-            <Route path="/audit-logs" component={AuditLogs} />
             <Route path="/settings" component={Settings} />
             <Route component={NotFound} />
           </Switch>

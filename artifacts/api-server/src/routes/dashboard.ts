@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { timesheetRepo, employeeRepo, clientRepo, projectRepo } from "../repositories/index.js";
-import { requireAuth } from "../middlewares/auth.js";
+import { requireAuth, requireRole } from "../middlewares/auth.js";
 import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
 const router = Router();
 
-router.get("/dashboard/stats", requireAuth, async (req, res) => {
+router.get("/dashboard/stats", requireAuth, requireRole("Admin", "Manager"), async (req, res) => {
   try {
     const [breakdown, employeeCounts, clientCount, projectCount] = await Promise.all([
       timesheetRepo.getStatusBreakdown(),
@@ -40,20 +40,20 @@ router.get("/dashboard/stats", requireAuth, async (req, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
-router.get("/dashboard/timesheet-status-breakdown", requireAuth, async (req, res) => {
+router.get("/dashboard/timesheet-status-breakdown", requireAuth, requireRole("Admin", "Manager"), async (req, res) => {
   try {
     res.json(await timesheetRepo.getStatusBreakdown());
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
-router.get("/dashboard/recent-activity", requireAuth, async (req, res) => {
+router.get("/dashboard/recent-activity", requireAuth, requireRole("Admin", "Manager"), async (req, res) => {
   try {
     const limit = Number(req.query.limit) || 10;
     res.json(await timesheetRepo.getRecentActivity(limit));
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
-router.get("/dashboard/compliance-overview", requireAuth, async (req, res) => {
+router.get("/dashboard/compliance-overview", requireAuth, requireRole("Admin", "Manager"), async (req, res) => {
   try {
     res.json(await timesheetRepo.getComplianceOverview());
   } catch (e: any) { res.status(500).json({ error: e.message }); }

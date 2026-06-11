@@ -108,7 +108,7 @@ export class PostgresTimesheetRepository implements ITimesheetRepository {
 
   async update(id: string, rows: any[]) {
     const ts = await db.select().from(timesheetsTable).where(eq(timesheetsTable.id, id));
-    if (!ts[0] || ts[0].status !== "Draft") return null;
+    if (!ts[0] || (ts[0].status !== "Draft" && ts[0].status !== "Rejected")) return null;
     await db.delete(timesheetRowsTable).where(eq(timesheetRowsTable.timesheetId, id));
     const now = new Date();
     let totalHours = 0;

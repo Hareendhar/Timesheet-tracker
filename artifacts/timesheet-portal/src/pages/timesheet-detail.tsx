@@ -81,20 +81,23 @@ export default function TimesheetDetail() {
       sunday: Number(rest.sunday) || 0,
     }));
 
-  const handleSave = async () => {
-    if (!id || !timesheet) return;
+  const handleSave = async (): Promise<boolean> => {
+    if (!id || !timesheet) return false;
     try {
       await updateTimesheet.mutateAsync({ timesheetId: id, data: { rows: buildPayloadRows() } });
       toast({ title: "Timesheet saved successfully" });
+      return true;
     } catch {
       toast({ title: "Failed to save timesheet", variant: "destructive" });
+      return false;
     }
   };
 
   const handleSubmit = async () => {
     if (!id) return;
     try {
-      await handleSave();
+      const saved = await handleSave();
+      if (!saved) return;
       await submitTimesheet.mutateAsync({ timesheetId: id });
       toast({ title: "Timesheet submitted for approval" });
       setLocation("/timesheets");
