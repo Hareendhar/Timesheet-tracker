@@ -95,8 +95,8 @@ router.patch("/timesheets/:timesheetId", requireAuth, async (req, res) => {
     const timesheetId = req.params.timesheetId as string;
     const existing = await timesheetRepo.findById(timesheetId);
     if (!existing) { res.status(404).json({ error: "Not found" }); return; }
-    // Only the owning employee or Admin can update
-    if (user.role === "Employee" && existing.employeeId !== user.id) { res.status(403).json({ error: "Forbidden" }); return; }
+    // Only the owning employee or Admin can edit timesheet rows; Managers approve/reject, not edit
+    if (user.role !== "Admin" && existing.employeeId !== user.id) { res.status(403).json({ error: "Forbidden" }); return; }
     const { rows } = req.body;
     const ts = await timesheetRepo.update(timesheetId, rows);
     if (!ts) { res.status(400).json({ error: "Cannot update non-draft timesheet" }); return; }

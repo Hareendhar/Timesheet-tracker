@@ -70,8 +70,8 @@ router.get("/employees/:employeeId/direct-reports", requireAuth, async (req, res
   try {
     const user = (req.session as any).user;
     const employeeId = req.params.employeeId as string;
-    // Only Admin or the employee themselves can see direct reports
-    if (user.role === "Employee" && employeeId !== user.id) { res.status(403).json({ error: "Forbidden" }); return; }
+    // Admin can view anyone's direct reports; all other roles may only view their own
+    if (user.role !== "Admin" && employeeId !== user.id) { res.status(403).json({ error: "Forbidden" }); return; }
     const result = await employeeRepo.getDirectReports(employeeId);
     if (!result) { res.status(404).json({ error: "Not found" }); return; }
     res.json(result);
