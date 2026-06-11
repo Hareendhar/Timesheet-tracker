@@ -8,14 +8,18 @@ router.post("/timesheets/bulk-action", requireAuth, requireRole("Manager", "Admi
   try {
     const user = (req.session as any).user;
     const { timesheetIds, action, comment } = req.body;
-    // Managers may only act on timesheets of their direct reports
-    if (user.role === "Manager") {
-      for (const id of timesheetIds as string[]) {
-        const ts = await timesheetRepo.findById(id);
-        if (ts) {
-          const emp = await employeeRepo.findById(ts.employeeId);
-          if (emp?.managerId !== user.id) { res.status(403).json({ error: "Forbidden: one or more timesheets do not belong to your direct reports" }); return; }
-        }
+    // Validate: reject requires a non-empty comment
+    if (action === "reject" && !comment?.trim()) { res.status(400).json({ error: "Rejection comment is required" }); return; }
+    // Validate ownership and state machine for each timesheet
+    for (const id of timesheetIds as string[]) {
+      const ts = await timesheetRepo.findById(id);
+      if (!ts) { res.status(404).json({ error: `Timesheet ${id} not found` }); return; }
+      // State machine: can only approve/reject from Submitted
+      if (ts.status !== "Submitted") { res.status(400).json({ error: `Timesheet ${id} is in '${ts.status}' status and cannot be ${action}d` }); return; }
+      // Managers may only act on timesheets of their direct reports
+      if (user.role === "Manager") {
+        const emp = await employeeRepo.findById(ts.employeeId);
+        if (emp?.managerId !== user.id) { res.status(403).json({ error: "Forbidden: one or more timesheets do not belong to your direct reports" }); return; }
       }
     }
     const result = await timesheetRepo.bulkAction(timesheetIds, action, user.id, comment);
@@ -138,6 +142,8 @@ router.post("/timesheets/:timesheetId/submit", requireAuth, async (req, res) => 
     if (!existing) { res.status(404).json({ error: "Not found" }); return; }
     // Only the owning employee can submit
     if (existing.employeeId !== user.id) { res.status(403).json({ error: "Forbidden" }); return; }
+    // State machine: can only submit from Draft or Rejected
+    if (existing.status !== "Draft" && existing.status !== "Rejected") { res.status(400).json({ error: `Cannot submit a timesheet in '${existing.status}' status` }); return; }
     const ts = await timesheetRepo.submit(timesheetId);
     await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Submitted", entityType: "Timesheet", entityId: timesheetId, ipAddress: getClientIp(req) });
     if (user.managerId) {
@@ -158,6 +164,8 @@ router.post("/timesheets/:timesheetId/approve", requireAuth, requireRole("Manage
       const emp = await employeeRepo.findById(existing.employeeId);
       if (emp?.managerId !== user.id) { res.status(403).json({ error: "Forbidden" }); return; }
     }
+    // State machine: can only approve from Submitted
+    if (existing.status !== "Submitted") { res.status(400).json({ error: `Cannot approve a timesheet in '${existing.status}' status` }); return; }
     const { comment } = req.body || {};
     const ts = await timesheetRepo.approve(timesheetId, user.id, comment);
     await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Approved", entityType: "Timesheet", entityId: timesheetId, ipAddress: getClientIp(req) });
@@ -177,7 +185,10 @@ router.post("/timesheets/:timesheetId/reject", requireAuth, requireRole("Manager
       const emp = await employeeRepo.findById(existing.employeeId);
       if (emp?.managerId !== user.id) { res.status(403).json({ error: "Forbidden" }); return; }
     }
+    // State machine: can only reject from Submitted
+    if (existing.status !== "Submitted") { res.status(400).json({ error: `Cannot reject a timesheet in '${existing.status}' status` }); return; }
     const { comment } = req.body;
+    if (!comment?.trim()) { res.status(400).json({ error: "Rejection comment is required" }); return; }
     const ts = await timesheetRepo.reject(timesheetId, comment);
     await auditRepo.create({ userId: user.id, userName: user.name, role: user.role, action: "Timesheet Rejected", entityType: "Timesheet", entityId: timesheetId, newValue: comment, ipAddress: getClientIp(req) });
     if (ts) await notificationRepo.create({ userId: ts.employeeId, type: "TIMESHEET_REJECTED", title: "Timesheet Rejected", message: `Your timesheet for week of ${ts.weekStartDate} was rejected. Reason: ${comment}`, relatedId: timesheetId, isRead: false });

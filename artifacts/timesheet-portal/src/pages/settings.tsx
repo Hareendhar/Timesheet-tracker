@@ -8,8 +8,8 @@ import { Separator } from "@/components/ui/separator";
 
 export default function Settings() {
   const { data: user } = useGetCurrentUser();
-  const { data: profile, isLoading } = useGetEmployeeProfile(user?.employeeId || "", {
-    query: { enabled: !!user?.employeeId, queryKey: getGetEmployeeProfileQueryKey(user?.employeeId || "") }
+  const { data: profile, isLoading } = useGetEmployeeProfile(user?.id || "", {
+    query: { enabled: !!user?.id, queryKey: getGetEmployeeProfileQueryKey(user?.id || "") }
   });
 
   const isAdmin = user?.role === "Admin";
@@ -118,18 +118,25 @@ export default function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Data Exports</CardTitle>
-                <CardDescription>Export system data to CSV.</CardDescription>
+                <CardDescription>Export system data as CSV or Excel.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start" onClick={() => handleExport("employees")}>
-                  <Download className="mr-2 h-4 w-4" /> Export Employees
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => handleExport("timesheets")}>
-                  <Download className="mr-2 h-4 w-4" /> Export Timesheets
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => handleExport("audit-logs")}>
-                  <Download className="mr-2 h-4 w-4" /> Export Audit Logs
-                </Button>
+                {[
+                  { label: "Employees", key: "employees" },
+                  { label: "Clients", key: "clients" },
+                  { label: "Projects", key: "projects" },
+                  { label: "Timesheets", key: "timesheets" },
+                  { label: "Audit Logs", key: "audit-logs" },
+                ].map(({ label, key }) => (
+                  <div key={key} className="flex gap-2">
+                    <Button variant="outline" className="flex-1 justify-start text-sm" onClick={() => handleExport(key)}>
+                      <Download className="mr-2 h-4 w-4" /> {label} (CSV)
+                    </Button>
+                    <Button variant="outline" className="flex-1 justify-start text-sm" onClick={() => window.open(`/api/export/${key}?format=xlsx`, "_blank")}>
+                      <Download className="mr-2 h-4 w-4" /> {label} (Excel)
+                    </Button>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           )}

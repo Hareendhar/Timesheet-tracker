@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { Plus, Search, Eye, Edit, Upload } from "lucide-react";
+import { Plus, Search, Eye, Edit, Upload, Download } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -71,22 +71,18 @@ export default function Employees() {
     if (!file) return;
     e.target.value = "";
     try {
-      const text = await file.text();
-      const lines = text.split("\n").filter(l => l.trim());
-      if (lines.length < 2) { toast({ title: "CSV must have a header row and at least one data row", variant: "destructive" }); return; }
-      const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
-      const rows = lines.slice(1).map(line => {
-        const vals = line.split(",").map(v => v.trim().replace(/^"|"$/g, ""));
-        const row: any = {};
-        headers.forEach((h, i) => { row[h] = vals[i] ?? ""; });
-        return row;
-      });
-      const result = await bulkUpload.mutateAsync({ data: { rows } });
+      const arrayBuffer = await file.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const result = await bulkUpload.mutateAsync({ data: { xlsxBase64: base64 } as any });
       qc.invalidateQueries({ queryKey: ["/api/employees"] });
       toast({ title: `Uploaded: ${result.successCount} created, ${result.errorCount} errors` });
     } catch (err: any) {
       toast({ title: err?.message || "Upload failed", variant: "destructive" });
     }
+  };
+
+  const handleDownloadTemplate = () => {
+    window.open("/api/employees/bulk-upload-template", "_blank");
   };
 
   const isPending = createEmployee.isPending || updateEmployee.isPending;
@@ -99,9 +95,12 @@ export default function Employees() {
           <p className="text-muted-foreground mt-1">Manage personnel, roles, and access.</p>
         </div>
         <div className="flex gap-2">
-          <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleBulkUpload} />
+          <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleBulkUpload} />
+          <Button variant="outline" onClick={handleDownloadTemplate}>
+            <Download className="mr-2 h-4 w-4" /> Download Template
+          </Button>
           <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={bulkUpload.isPending}>
-            <Upload className="mr-2 h-4 w-4" /> Bulk Upload CSV
+            <Upload className="mr-2 h-4 w-4" /> Bulk Upload Excel
           </Button>
           <Button onClick={openCreate}>
             <Plus className="mr-2 h-4 w-4" /> Add Employee
