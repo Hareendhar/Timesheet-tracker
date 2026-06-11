@@ -1,0 +1,493 @@
+Project Name
+
+Versatile Timesheet Portal
+
+A web-based timesheet management application for Versatile IT Solutions.
+
+The application will be used by Employees, Managers, and Administrators to capture weekly timesheets, approve/reject submissions, monitor compliance, and maintain audit trails.
+
+The application must be designed as an MVP but with an architecture that can scale into an enterprise product later.
+
+Company Branding
+
+Company:
+
+Versatile IT Solutions
+
+Theme should be inspired by company branding and logo.
+
+Primary Colors:
+
+Dark Navy Blue (#1F2B5B)
+Medium Blue (#1C75BC)
+Light Blue (#29ABE2)
+
+UI Guidelines:
+
+Modern SaaS design
+Professional corporate look
+Responsive desktop-first experience
+Clean cards and tables
+Minimalistic layout
+Dark text on light background
+Consistent use of blue accent colors
+Technology Stack
+Frontend
+ReactJS
+TypeScript
+Material UI (MUI)
+React Router
+React Query
+Backend
+Node.js
+ExpressJS
+TypeScript
+Authentication
+Google OAuth 2.0
+Google Workspace Login
+Database
+
+Initial:
+
+Replit Database
+
+Architecture Requirement:
+
+Create a repository/service abstraction layer.
+
+Example:
+
+EmployeeRepository
+ProjectRepository
+TimesheetRepository
+
+The application should NOT directly depend on Replit Database.
+
+Future migration should allow switching to:
+
+PostgreSQL
+MySQL
+SQL Server
+MongoDB
+
+with minimal code changes.
+
+User Roles
+
+The Employee table must contain a Role column.
+
+Roles:
+
+Employee
+
+Can:
+
+Login
+Create Timesheets
+Edit Draft Timesheets
+Submit Timesheets
+View Own Profile
+Manager
+
+Can:
+
+Everything Employee can do
+Approve Timesheets
+Reject Timesheets
+Add Comments
+Bulk Approve
+Bulk Reject
+View Team Statistics
+Admin
+
+Can:
+
+Full System Access
+Employee Management
+Project Management
+Client Management
+Audit Logs
+Export Data
+System Configuration
+Authentication
+Google SSO
+
+Users login using Google.
+
+After login:
+
+Google Email
+=
+Employee.Email
+
+If no match exists:
+
+Display:
+
+"Your account is not configured. Please contact administrator."
+
+No local passwords.
+
+No signup screen.
+
+Employee Management
+Employee Fields
+EmployeeId
+EmployeeName
+Email
+Department
+Designation
+Role
+ManagerEmployeeId
+Status
+DateCreated
+DateModified
+
+Roles:
+
+Employee
+Manager
+Admin
+
+Status:
+
+Active
+Inactive
+Bulk Employee Upload
+
+Admin can upload Excel.
+
+Columns:
+
+Employee ID
+Employee Name
+Email
+Department
+Designation
+Role
+Manager Employee ID
+Status
+
+System validations:
+
+Duplicate Employee ID
+Duplicate Email
+Missing Manager
+Invalid Role
+
+Show row-wise validation errors.
+
+Allow download of sample template.
+
+Organization Hierarchy
+
+Manager relationship is stored using:
+
+ManagerEmployeeId
+
+Example:
+
+EMP001 (Manager)
+
+EMP002 → Manager = EMP001
+EMP003 → Manager = EMP001
+
+Hierarchy must drive approval workflow automatically.
+
+Client Management
+
+Fields:
+
+Client Code
+Client Name
+Status
+Project Management
+
+Fields:
+
+Project Code
+Project Name
+Client
+Status
+Activity Categories
+
+Admin managed.
+
+Examples:
+
+Development
+Testing
+Support
+Meeting
+Training
+Documentation
+Recruitment
+Leave
+Timesheet Module
+
+This is the core feature.
+
+Weekly Timesheet Entry
+
+Employees should NOT be forced to enter records one day at a time.
+
+Provide Excel-like grid experience.
+
+Example:
+
+Project	Activity	Mon	Tue	Wed	Thu	Fri
+Mobile App	Development	8	8	8	8	8
+
+Bulk-friendly interface.
+
+Allow:
+
+Add Row
+Duplicate Row
+Copy Previous Week
+Paste from Excel
+Timesheet Fields
+Week Start Date
+Employee
+Project
+Activity Category
+Daily Hours
+Comments
+Validation Rules
+
+Maximum:
+
+24 hours/day
+
+No future week submission.
+
+Only active projects visible.
+
+Only active activities visible.
+
+Weekly Submission Workflow
+
+States:
+
+Draft
+Submitted
+Approved
+Rejected
+Submission Deadline
+
+Timesheet must be submitted by:
+
+Friday 11:59 PM IST
+
+for that week.
+
+Show status:
+
+Pending Submission
+Submitted
+Approved
+Rejected
+Bulk Submission
+
+Employee can:
+
+Select multiple draft rows
+
+Submit entire week in one action.
+
+Manager Approval Dashboard
+
+Manager sees only direct reports.
+
+Columns:
+
+Employee
+Week
+Total Hours
+Status
+Submitted Date
+Bulk Approval
+
+Manager can:
+
+Select multiple employees
+
+Approve All
+
+Reject All
+
+Add Bulk Comment
+
+Example:
+
+Approved.
+Good work.
+Rejection Workflow
+
+Manager enters comment.
+
+Employee receives notification.
+
+Employee can:
+
+Edit
+Resubmit
+Employee Profile Page
+
+Display:
+
+Profile Information
+Name
+Department
+Designation
+Manager
+Role
+Personal Metrics
+Total Timesheets Submitted
+Pending Timesheets
+Rejected Timesheets
+Approval %
+Manager Profile Page
+
+Display:
+
+Team Metrics
+Employees Reporting
+Timesheets Approved
+Timesheets Rejected
+Pending Approvals
+Employee Breakdown
+Employee	Submitted	Approved	Rejected
+Admin Dashboard
+
+Global visibility.
+
+Show:
+
+Total Employees
+Total Managers
+Total Projects
+Timesheets Submitted
+Timesheets Approved
+Timesheets Rejected
+Pending Approvals
+Audit Trail
+
+Track every action.
+
+Capture:
+
+User
+Role
+Action
+Timestamp
+Old Value
+New Value
+IP Address
+
+Examples:
+
+Employee Created
+Employee Updated
+Timesheet Submitted
+Timesheet Approved
+Timesheet Rejected
+Project Created
+Client Updated
+Admin Audit Viewer
+
+Filters:
+
+Date Range
+User
+Action Type
+Role
+Export Capability
+
+Admin can export:
+
+Employees
+Projects
+Clients
+Timesheets
+Audit Logs
+
+Formats:
+
+Excel
+CSV
+Notifications
+
+In-App Notifications.
+
+Examples:
+
+Employee:
+
+Timesheet Submitted
+Timesheet Rejected
+Timesheet Approved
+
+Manager:
+
+New Timesheet Awaiting Approval
+
+Admin:
+
+Bulk Upload Completed
+Search
+
+Global search capability.
+
+Search by:
+
+Employee
+Project
+Client
+Manager
+Email
+Future Ready Architecture
+
+Create interfaces for:
+
+IEmployeeRepository
+IProjectRepository
+ITimesheetRepository
+IAuditRepository
+
+Implement:
+
+ReplitDatabaseRepository
+
+so future migration to SQL databases requires only repository replacement.
+
+Deliverables
+
+Generate:
+
+Complete React Frontend
+Complete Express Backend
+Google OAuth Login
+Replit Database Integration
+Role Based Authorization
+Audit Logging Framework
+Excel Upload & Export
+Bulk Timesheet Entry Grid
+Bulk Approval Workflow
+Responsive UI
+Seed Data Scripts
+README with Setup Instructions
+Environment Variable Configuration
+Database Abstraction Layer for future migration
+Non-Functional Requirements
+TypeScript everywhere
+Mobile responsive
+Clean architecture
+Repository pattern
+Error handling
+Input validation
+Production-ready folder structure
+No hardcoded values
+Reusable components
+Pagination on all large tables
+Sorting and filtering on all grids
