@@ -23,10 +23,10 @@ import {
 
 export default function Timesheets() {
   const { data: user } = useGetCurrentUser();
-  const tsParams = { employeeId: user?.employeeId, pageSize: 20 };
+  const tsParams = { employeeId: user?.id, pageSize: 20 };
   const { data: timesheets, isLoading } = useListTimesheets(
     tsParams,
-    { query: { enabled: !!user?.employeeId, queryKey: getListTimesheetsQueryKey(tsParams) } }
+    { query: { enabled: !!user?.id, queryKey: getListTimesheetsQueryKey(tsParams) } }
   );
 
   const getStatusBadge = (status: string) => {

@@ -1,24 +1,34 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useGetCurrentUser, useLogout, useListNotifications, getGetCurrentUserQueryKey, getListNotificationsQueryKey } from "@workspace/api-client-react";
+import {
+  useGetCurrentUser, useLogout, useListNotifications, useGlobalSearch,
+  getGetCurrentUserQueryKey, getListNotificationsQueryKey, getGlobalSearchQueryKey,
+} from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboard, Clock, CheckSquare, Users, Building, Briefcase, Activity, Bell, Search, Settings, LogOut, FileText, Menu } from "lucide-react";
+import {
+  LayoutDashboard, Clock, CheckSquare, Users, Building, Briefcase,
+  Activity, Bell, Search, Settings, LogOut, FileText, Menu, X,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface AppLayoutProps {
   children: ReactNode;
+}
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
@@ -27,11 +37,45 @@ export function AppLayout({ children }: AppLayoutProps) {
     query: { retry: false, queryKey: getGetCurrentUserQueryKey() },
   });
   const logout = useLogout();
-  
+
   const { data: notifications } = useListNotifications(
     { unreadOnly: true, pageSize: 5 },
     { query: { enabled: !!user, queryKey: getListNotificationsQueryKey({ unreadOnly: true, pageSize: 5 }) } }
   );
+
+  // Global search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const debouncedQuery = useDebounce(searchQuery, 300);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  const { data: searchResults } = useGlobalSearch(
+    { q: debouncedQuery },
+    { query: { enabled: debouncedQuery.length >= 2, queryKey: getGlobalSearchQueryKey({ q: debouncedQuery }) } }
+  );
+
+  const hasResults = searchResults && (
+    (searchResults.employees?.length ?? 0) > 0 ||
+    (searchResults.projects?.length ?? 0) > 0 ||
+    (searchResults.clients?.length ?? 0) > 0
+  );
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleSearchNav = (path: string) => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    setLocation(path);
+  };
 
   useEffect(() => {
     if (!isLoading && (!user || isError)) {
@@ -48,9 +92,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     return <div className="min-h-screen flex items-center justify-center"><Skeleton className="h-12 w-12 rounded-full" /></div>;
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const isAdmin = user.role === "Admin";
   const isManager = user.role === "Manager" || isAdmin;
@@ -78,7 +120,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
           <span className="font-semibold text-lg tracking-tight">Versatile IT</span>
         </div>
-        
+
         <div className="p-4 pb-2">
           <div className="flex items-center gap-3 mb-6">
             <Avatar className="h-10 w-10 border-2 border-sidebar-border bg-sidebar-accent">
@@ -97,14 +139,18 @@ export function AppLayout({ children }: AppLayoutProps) {
           {navItems.map((item) => {
             const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
             return (
-              <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground/80"}`}>
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground/80"}`}
+              >
                 <item.icon className="h-4 w-4" />
                 {item.label}
               </Link>
             );
           })}
         </nav>
-        
+
         <div className="p-4 border-t border-sidebar-border">
           <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
             <Settings className="h-4 w-4" />
@@ -118,15 +164,95 @@ export function AppLayout({ children }: AppLayoutProps) {
         {/* Topbar */}
         <header className="h-16 bg-card border-b flex items-center justify-between px-4 sm:px-6 z-10 sticky top-0">
           <div className="flex items-center gap-4 flex-1">
-            {/* Mobile menu trigger could go here */}
-            
-            <div className="relative w-full max-w-md hidden sm:block">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            {/* Global Search */}
+            <div ref={searchRef} className="relative w-full max-w-md hidden sm:block">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 type="search"
                 placeholder="Search timesheets, projects, people..."
-                className="w-full pl-9 bg-muted/50 border-transparent focus-visible:bg-background"
+                className="w-full pl-9 pr-8 bg-muted/50 border-transparent focus-visible:bg-background"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchOpen(e.target.value.length >= 2);
+                }}
+                onFocus={() => { if (searchQuery.length >= 2) setSearchOpen(true); }}
               />
+              {searchQuery && (
+                <button
+                  className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                  onClick={() => { setSearchQuery(""); setSearchOpen(false); }}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+
+              {/* Search Results Dropdown */}
+              {searchOpen && debouncedQuery.length >= 2 && (
+                <div className="absolute top-full mt-1 left-0 right-0 bg-card border rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                  {!hasResults ? (
+                    <p className="text-sm text-muted-foreground text-center py-6">No results for "{debouncedQuery}"</p>
+                  ) : (
+                    <div className="p-1">
+                      {(searchResults?.employees?.length ?? 0) > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground px-2 py-1.5 uppercase tracking-wide">People</p>
+                          {searchResults!.employees!.map((emp: any) => (
+                            <button
+                              key={emp.id}
+                              className="w-full flex items-center gap-3 px-2 py-2 rounded-md hover:bg-muted text-left text-sm"
+                              onClick={() => handleSearchNav(isAdmin ? `/employees/${emp.id}` : "/timesheets")}
+                            >
+                              <Avatar className="h-6 w-6">
+                                <AvatarFallback className="text-xs bg-primary/10 text-primary">{emp.name?.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <span className="font-medium">{emp.name}</span>
+                                <span className="text-muted-foreground ml-2 text-xs">{emp.email}</span>
+                              </div>
+                              <Badge variant="outline" className="ml-auto text-xs">{emp.department}</Badge>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {(searchResults?.projects?.length ?? 0) > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground px-2 py-1.5 uppercase tracking-wide">Projects</p>
+                          {searchResults!.projects!.map((proj: any) => (
+                            <button
+                              key={proj.id}
+                              className="w-full flex items-center gap-3 px-2 py-2 rounded-md hover:bg-muted text-left text-sm"
+                              onClick={() => handleSearchNav("/projects")}
+                            >
+                              <Briefcase className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="font-medium">{proj.name}</span>
+                              <span className="text-muted-foreground text-xs ml-1">({proj.projectCode})</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {(searchResults?.clients?.length ?? 0) > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground px-2 py-1.5 uppercase tracking-wide">Clients</p>
+                          {searchResults!.clients!.map((client: any) => (
+                            <button
+                              key={client.id}
+                              className="w-full flex items-center gap-3 px-2 py-2 rounded-md hover:bg-muted text-left text-sm"
+                              onClick={() => handleSearchNav("/clients")}
+                            >
+                              <Building className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="font-medium">{client.name}</span>
+                              <span className="text-muted-foreground text-xs ml-1">({client.clientCode})</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

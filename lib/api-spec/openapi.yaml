@@ -72,6 +72,49 @@ paths:
         "200":
           description: Logged out
 
+  /auth/google:
+    get:
+      operationId: initiateGoogleOAuth
+      tags: [auth]
+      summary: Initiate Google OAuth 2.0 login flow
+      description: Redirects the browser to Google's OAuth consent screen.
+      responses:
+        "302":
+          description: Redirect to Google OAuth consent screen
+
+  /auth/google/callback:
+    get:
+      operationId: googleOAuthCallback
+      tags: [auth]
+      summary: Google OAuth 2.0 callback handler
+      description: >
+        Handles the redirect from Google after the user grants or denies consent.
+        On success, creates or updates the user session and redirects to the app.
+        On failure, redirects to /login?error=<reason>.
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Authorization code returned by Google on success
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+          description: CSRF state token generated at login initiation
+        - name: error
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Error code returned by Google on denial
+      responses:
+        "302":
+          description: >
+            Redirect to the app root on success, or to /login?error=<reason> on failure.
+
   # EMPLOYEES
   /employees:
     get:
