@@ -1,6 +1,6 @@
 - [API response shape](api-response-shape.md) — all list endpoints return `{data, total, page, pageSize}` NOT `.items`; use `.data` everywhere
 - [Route handler void pattern](route-handler-void.md) — Express handlers must stay void: use `res.xxx(); return;` NOT `return res.xxx()`
+- [Timesheet field contract](timesheet-field-contract.md) — full day names only: monday/tuesday/.../sunday; user.id (UUID) as employeeId, never user.employeeId (business code)
 - [EmployeeProfile shape](employee-profile-shape.md) — nested: `profile.employee.*`, `profile.metrics.*` with fields totalSubmitted/approved/rejected/pending/approvalRate
 - [Dashboard API fields](dashboard-api-fields.md) — DashboardStats has no missingTimesheets/approvedThisWeek/totalHoursLogged; use timesheetsApproved/totalEmployees/complianceRate
-- [ActivityFeedItem fields](activity-feed-fields.md) — fields are employeeName+action+timestamp+weekStartDate (NOT userName/createdAt)
 - [pool.query for raw SQL](pool-query-raw.md) — Drizzle sql.raw() only takes 1 arg; use imported `pool` from @workspace/db for parameterized raw queries

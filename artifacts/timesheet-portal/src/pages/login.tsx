@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { useGetCurrentUser, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock } from "lucide-react";
+import { Clock, AlertTriangle } from "lucide-react";
 import { useEffect } from "react";
 
 export function Login() {
@@ -21,9 +21,20 @@ export function Login() {
   }, [user, isLoading, setLocation]);
 
   const handleLogin = () => {
-    // In a real app, this would redirect to the Google OAuth endpoint
     window.location.href = "/api/auth/google";
   };
+
+  // Read error from OAuth redirect query param
+  const params = new URLSearchParams(window.location.search);
+  const error = params.get("error");
+  const errorMessages: Record<string, string> = {
+    not_configured: "Your account is not registered in the system. Please contact your administrator.",
+    token_exchange_failed: "Authentication failed. Please try again.",
+    invalid_state: "Authentication request expired or invalid. Please try again.",
+    auth_error: "An error occurred during sign-in. Please try again.",
+    no_code: "Sign-in was cancelled. Please try again.",
+  };
+  const errorMessage = error ? (errorMessages[error] ?? "An unexpected error occurred.") : null;
 
   if (isLoading) return null;
 
@@ -42,6 +53,13 @@ export function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 pb-8">
+          {errorMessage && (
+            <div className="flex items-start gap-3 rounded-md bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 text-sm">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           <Button 
             className="w-full h-12 text-base font-medium shadow-sm" 
             onClick={handleLogin}

@@ -25,11 +25,11 @@ export default function TimesheetNew() {
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
 
   const [rows, setRows] = useState<any[]>([
-    { id: crypto.randomUUID(), projectId: "", activityId: "", mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0, comments: "" }
+    { id: crypto.randomUUID(), projectId: "", activityId: "", monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0, comments: "" }
   ]);
 
   const addRow = () => {
-    setRows([...rows, { id: crypto.randomUUID(), projectId: "", activityId: "", mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0, comments: "" }]);
+    setRows([...rows, { id: crypto.randomUUID(), projectId: "", activityId: "", monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0, comments: "" }]);
   };
 
   const removeRow = (id: string) => {
@@ -41,7 +41,7 @@ export default function TimesheetNew() {
   };
 
   const calculateRowTotal = (row: any) => {
-    return (Number(row.mon) || 0) + (Number(row.tue) || 0) + (Number(row.wed) || 0) + (Number(row.thu) || 0) + (Number(row.fri) || 0) + (Number(row.sat) || 0) + (Number(row.sun) || 0);
+    return (Number(row.monday) || 0) + (Number(row.tuesday) || 0) + (Number(row.wednesday) || 0) + (Number(row.thursday) || 0) + (Number(row.friday) || 0) + (Number(row.saturday) || 0) + (Number(row.sunday) || 0);
   };
 
   const calculateGrandTotal = () => {
@@ -52,18 +52,20 @@ export default function TimesheetNew() {
     if (!user?.employeeId) return;
     try {
       const data = {
-        employeeId: user.employeeId,
+        employeeId: user.id,
         weekStartDate: format(weekStart, "yyyy-MM-dd"),
         status: "Draft" as const,
         rows: rows.map(({ id, ...rest }) => ({
-          ...rest,
-          mon: Number(rest.mon) || 0,
-          tue: Number(rest.tue) || 0,
-          wed: Number(rest.wed) || 0,
-          thu: Number(rest.thu) || 0,
-          fri: Number(rest.fri) || 0,
-          sat: Number(rest.sat) || 0,
-          sun: Number(rest.sun) || 0,
+          projectId: rest.projectId,
+          activityId: rest.activityId,
+          comments: rest.comments || "",
+          monday: Number(rest.monday) || 0,
+          tuesday: Number(rest.tuesday) || 0,
+          wednesday: Number(rest.wednesday) || 0,
+          thursday: Number(rest.thursday) || 0,
+          friday: Number(rest.friday) || 0,
+          saturday: Number(rest.saturday) || 0,
+          sunday: Number(rest.sunday) || 0,
         }))
       };
       
@@ -83,7 +85,7 @@ export default function TimesheetNew() {
       
       const res = await copyPrevious.mutateAsync({ 
         data: { 
-          employeeId: user.employeeId, 
+          employeeId: user.id, 
           sourceWeekStartDate: sourceWeek, 
           targetWeekStartDate: targetWeek 
         } 
@@ -166,7 +168,7 @@ export default function TimesheetNew() {
                         </SelectContent>
                       </Select>
                     </td>
-                    {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(day => (
+                    {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => (
                       <td key={day} className="p-2">
                         <Input 
                           type="number" 
@@ -191,7 +193,7 @@ export default function TimesheetNew() {
                 ))}
                 <tr className="bg-muted/30 font-semibold">
                   <td colSpan={2} className="p-3 text-right">Grand Total:</td>
-                  {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(day => (
+                  {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => (
                     <td key={day} className="p-3 text-center">
                       {rows.reduce((sum, row) => sum + (Number(row[day]) || 0), 0)}
                     </td>
