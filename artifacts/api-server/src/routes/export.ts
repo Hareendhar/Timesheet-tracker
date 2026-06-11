@@ -51,6 +51,26 @@ router.get("/export/timesheets", requireAuth, requireRole("Admin", "Manager"), a
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+router.get("/export/clients", requireAuth, requireRole("Admin"), async (req, res) => {
+  try {
+    const result = await clientRepo.findAll({ pageSize: 10000 });
+    const csv = toCSV(result.data, ["clientCode", "name", "status", "createdAt"]);
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=clients.csv");
+    res.send(csv);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+router.get("/export/projects", requireAuth, requireRole("Admin"), async (req, res) => {
+  try {
+    const result = await projectRepo.findAll({ pageSize: 10000 });
+    const csv = toCSV(result.data, ["projectCode", "name", "clientName", "status", "createdAt"]);
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=projects.csv");
+    res.send(csv);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 router.get("/export/audit-logs", requireAuth, requireRole("Admin"), async (req, res) => {
   try {
     const data = await auditRepo.findAll_export({ dateFrom: req.query.dateFrom as string, dateTo: req.query.dateTo as string });

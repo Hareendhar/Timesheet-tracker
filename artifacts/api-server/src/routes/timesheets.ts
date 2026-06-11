@@ -33,8 +33,20 @@ router.post("/timesheets/copy-previous-week", requireAuth, async (req, res) => {
   try {
     const user = (req.session as any).user;
     const { sourceWeekStartDate, targetWeekStartDate } = req.body;
-    // Employees can only copy their own timesheets
-    const employeeId = user.role === "Employee" ? user.id : (req.body.employeeId || user.id);
+    // Determine target employee and enforce ownership/reporting chain
+    let employeeId: string;
+    if (user.role === "Employee") {
+      employeeId = user.id;
+    } else if (user.role === "Manager") {
+      const requested = req.body.employeeId || user.id;
+      if (requested !== user.id) {
+        const emp = await employeeRepo.findById(requested);
+        if (!emp || emp.managerId !== user.id) { res.status(403).json({ error: "Forbidden: not a direct report" }); return; }
+      }
+      employeeId = requested;
+    } else {
+      employeeId = req.body.employeeId || user.id;
+    }
     const ts = await timesheetRepo.copyFromPreviousWeek(employeeId, sourceWeekStartDate, targetWeekStartDate);
     res.json(ts);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -61,8 +73,21 @@ router.post("/timesheets", requireAuth, async (req, res) => {
   try {
     const user = (req.session as any).user;
     const { weekStartDate, rows } = req.body;
-    // Employees can only create timesheets for themselves
-    const employeeId = user.role === "Employee" ? user.id : (req.body.employeeId || user.id);
+    // Determine target employee and enforce ownership/reporting chain
+    let employeeId: string;
+    if (user.role === "Employee") {
+      employeeId = user.id;
+    } else if (user.role === "Manager") {
+      const requested = req.body.employeeId || user.id;
+      if (requested !== user.id) {
+        const emp = await employeeRepo.findById(requested);
+        if (!emp || emp.managerId !== user.id) { res.status(403).json({ error: "Forbidden: not a direct report" }); return; }
+      }
+      employeeId = requested;
+    } else {
+      // Admin may target any employee
+      employeeId = req.body.employeeId || user.id;
+    }
     const existing = await timesheetRepo.findByEmployeeAndWeek(employeeId, weekStartDate);
     if (existing && existing.status !== "Draft") { res.status(400).json({ error: "A non-draft timesheet for this week already exists" }); return; }
     let ts;
