@@ -1,57 +1,39 @@
 import { Router } from "express";
-import { randomBytes } from "crypto";
 import { employeeRepo } from "../repositories/index.js";
 import { requireAuth } from "../middlewares/auth.js";
 
 const router = Router();
 
-// Google OAuth - redirect (generates CSRF state)
-router.get("/auth/google", (req, res) => {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (!clientId) { res.redirect("/login?error=oauth_not_configured"); return; }
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${process.env.APP_URL}/api/auth/google/callback`;
-  if (!redirectUri || redirectUri.startsWith("undefined")) { res.redirect("/login?error=redirect_uri_not_configured"); return; }
-  const scope = "openid email profile";
-  const state = randomBytes(32).toString("hex");
-  (req.session as any).oauthState = state;
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=select_account&state=${encodeURIComponent(state)}`;
-  res.redirect(url);
+// Public: list all active employees for the login picker
+router.get("/auth/users", async (_req, res) => {
+  try {
+    const result = await employeeRepo.findAll({ status: "Active", pageSize: 500 });
+    res.json(
+      result.data.map((e) => ({
+        id: e.id,
+        employeeId: e.employeeId,
+        name: e.name,
+        email: e.email,
+        role: e.role,
+        department: e.department,
+        designation: e.designation,
+      }))
+    );
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
 });
 
-// Google OAuth callback
-router.get("/auth/google/callback", async (req, res) => {
+// Public: select a user to log in as (no password — dev/demo mode)
+router.post("/auth/select-user", async (req, res) => {
   try {
-    const { code, state } = req.query;
-    if (!code) { res.redirect("/login?error=no_code"); return; }
-    // Validate CSRF state
-    const expectedState = (req.session as any).oauthState;
-    if (!state || !expectedState || state !== expectedState) { res.redirect("/login?error=invalid_state"); return; }
-    delete (req.session as any).oauthState;
+    const { id } = req.body as { id?: string };
+    if (!id) { res.status(400).json({ message: "id required" }); return; }
 
-    const clientId = process.env.GOOGLE_CLIENT_ID!;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${process.env.APP_URL}/api/auth/google/callback`;
-
-    // Exchange code for tokens
-    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ code: code as string, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: "authorization_code" }),
-    });
-    const tokens = await tokenRes.json() as any;
-    if (!tokens.access_token) { res.redirect("/login?error=token_exchange_failed"); return; }
-
-    // Get user info
-    const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-      headers: { Authorization: `Bearer ${tokens.access_token}` },
-    });
-    const googleUser = await userRes.json() as any;
-    const email = googleUser.email;
-
-    // Look up employee
-    const employee = await employeeRepo.findByEmail(email);
+    const employee = await employeeRepo.findById(id);
     if (!employee || employee.status === "Inactive") {
-      res.redirect("/login?error=not_configured"); return;
+      res.status(404).json({ message: "Employee not found or inactive" });
+      return;
     }
 
     (req.session as any).user = {
@@ -62,13 +44,13 @@ router.get("/auth/google/callback", async (req, res) => {
       role: employee.role,
       department: employee.department,
       designation: employee.designation,
-      managerId: employee.managerId,
-      avatarUrl: googleUser.picture ?? null,
+      managerId: employee.managerId ?? null,
+      avatarUrl: null,
     };
 
-    res.redirect("/");
+    res.json({ ok: true });
   } catch (err) {
-    res.redirect("/login?error=auth_error");
+    res.status(500).json({ message: "Login failed" });
   }
 });
 

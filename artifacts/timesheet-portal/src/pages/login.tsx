@@ -1,97 +1,147 @@
 import { useLocation } from "wouter";
 import { useGetCurrentUser, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, AlertTriangle } from "lucide-react";
-import { useEffect } from "react";
+import { Clock, User, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+
+type EmployeeOption = {
+  id: string;
+  employeeId: string;
+  name: string;
+  email: string;
+  role: "Admin" | "Manager" | "Employee";
+  department: string;
+  designation: string;
+};
+
+const roleBadge: Record<string, string> = {
+  Admin: "bg-[#1F2B5B] text-white",
+  Manager: "bg-[#1C75BC] text-white",
+  Employee: "bg-[#29ABE2]/20 text-[#1C75BC]",
+};
 
 export function Login() {
   const [, setLocation] = useLocation();
-  const { data: user, isLoading } = useGetCurrentUser({
-    query: {
-      retry: false,
-      queryKey: getGetCurrentUserQueryKey(),
-    }
+  const queryClient = useQueryClient();
+  const { data: user, isLoading: authLoading } = useGetCurrentUser({
+    query: { retry: false, queryKey: getGetCurrentUserQueryKey() },
   });
 
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
+  const [listLoading, setListLoading] = useState(true);
+  const [signingIn, setSigningIn] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (user && !isLoading) {
+    if (user && !authLoading) setLocation("/");
+  }, [user, authLoading, setLocation]);
+
+  useEffect(() => {
+    fetch("/api/auth/users")
+      .then((r) => r.json())
+      .then((data) => {
+        const sorted = (data as EmployeeOption[]).sort((a, b) => {
+          const order = { Admin: 0, Manager: 1, Employee: 2 };
+          return (order[a.role] ?? 3) - (order[b.role] ?? 3);
+        });
+        setEmployees(sorted);
+      })
+      .catch(() => setError("Failed to load employee list."))
+      .finally(() => setListLoading(false));
+  }, []);
+
+  const handleSelect = async (emp: EmployeeOption) => {
+    setSigningIn(emp.id);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/select-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: emp.id }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Login failed");
+      await queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
       setLocation("/");
+    } catch {
+      setError("Could not sign in. Please try again.");
+      setSigningIn(null);
     }
-  }, [user, isLoading, setLocation]);
-
-  const handleLogin = () => {
-    window.location.href = "/api/auth/google";
   };
 
-  // Read error from OAuth redirect query param
-  const params = new URLSearchParams(window.location.search);
-  const error = params.get("error");
-  const errorMessages: Record<string, string> = {
-    not_configured: "Your account is not registered in the system. Please contact your administrator.",
-    oauth_not_configured: "Google Sign-In is not yet configured. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in the Secrets panel.",
-    redirect_uri_not_configured: "OAuth redirect URI is misconfigured. Please set APP_URL in the environment settings.",
-    token_exchange_failed: "Authentication failed. Please try again.",
-    invalid_state: "Authentication request expired or invalid. Please try again.",
-    auth_error: "An error occurred during sign-in. Please try again.",
-    no_code: "Sign-in was cancelled. Please try again.",
-  };
-  const errorMessage = error ? (errorMessages[error] ?? "An unexpected error occurred.") : null;
-
-  if (isLoading) return null;
+  if (authLoading) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-sidebar text-sidebar-foreground">
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
-      
-      <Card className="w-full max-w-md border-0 shadow-2xl bg-card/95 backdrop-blur-sm z-10">
-        <CardHeader className="space-y-3 pb-6 text-center">
-          <div className="mx-auto w-16 h-16 rounded-xl bg-primary flex items-center justify-center shadow-lg mb-2">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-sidebar text-sidebar-foreground px-4 py-10">
+      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-overlay pointer-events-none" />
+
+      <div className="z-10 w-full max-w-2xl space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <div className="mx-auto w-16 h-16 rounded-xl bg-primary flex items-center justify-center shadow-lg mb-3">
             <Clock className="h-8 w-8 text-white" />
           </div>
-          <CardTitle className="text-3xl font-bold tracking-tight text-foreground">Versatile IT</CardTitle>
-          <CardDescription className="text-base">
-            Enterprise Workforce Timesheet Portal
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6 pb-8">
-          {errorMessage && (
-            <div className="flex items-start gap-3 rounded-md bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 text-sm">
-              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
+          <h1 className="text-3xl font-bold text-white tracking-tight">Versatile IT</h1>
+          <p className="text-white/60">Enterprise Workforce Timesheet Portal</p>
+        </div>
 
-          <Button 
-            className="w-full h-12 text-base font-medium shadow-sm" 
-            onClick={handleLogin}
-          >
-            <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
-              <path
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                fill="#4285F4"
-              />
-              <path
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                fill="#34A853"
-              />
-              <path
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                fill="#EA4335"
-              />
-            </svg>
-            Sign in with Google
-          </Button>
-          
-          <div className="text-center text-sm text-muted-foreground">
-            <p>Secure access for Versatile IT employees and contractors.</p>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Card */}
+        <Card className="border-0 shadow-2xl bg-card/95 backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Select your account</CardTitle>
+            <CardDescription>Choose who you are to continue to the portal.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {error && (
+              <div className="rounded-md bg-destructive/10 border border-destructive/30 text-destructive px-4 py-2 text-sm">
+                {error}
+              </div>
+            )}
+
+            {listLoading ? (
+              <div className="flex items-center justify-center py-10 text-muted-foreground gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Loading employees…</span>
+              </div>
+            ) : employees.length === 0 ? (
+              <p className="text-center text-muted-foreground py-6 text-sm">No active employees found.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {employees.map((emp) => (
+                  <button
+                    key={emp.id}
+                    onClick={() => handleSelect(emp)}
+                    disabled={!!signingIn}
+                    className="flex items-center gap-3 rounded-lg border border-border bg-background hover:bg-accent hover:border-primary/40 transition-all px-4 py-3 text-left group disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                      {signingIn === emp.id ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      ) : (
+                        <User className="h-5 w-5 text-primary" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm text-foreground truncate">{emp.name}</span>
+                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${roleBadge[emp.role] ?? "bg-muted text-muted-foreground"}`}>
+                          {emp.role}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{emp.designation} · {emp.department}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <p className="text-center text-xs text-white/40">
+          Secure access for Versatile IT employees and contractors.
+        </p>
+      </div>
     </div>
   );
 }
