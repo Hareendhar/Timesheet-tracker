@@ -125,7 +125,7 @@ export default function Approvals() {
                         <Checkbox checked={selectedIds.has(ts.id)} onCheckedChange={() => toggleOne(ts.id)} />
                       </TableCell>
                       <TableCell className="font-medium">{ts.employeeName}</TableCell>
-                      <TableCell>{format(parseISO(ts.weekStartDate), "MMM d, yyyy")}</TableCell>
+                      <TableCell>{ts.weekStartDate ? format(parseISO(ts.weekStartDate), "MMM d, yyyy") : "-"}</TableCell>
                       <TableCell className="text-right">{ts.totalHours}</TableCell>
                       <TableCell>
                         {ts.submittedAt ? format(parseISO(ts.submittedAt), "MMM d, yyyy HH:mm") : "-"}

@@ -4,6 +4,24 @@ import { eq, and, sql, inArray } from "drizzle-orm";
 import { generateId } from "../../lib/id.js";
 import type { ITimesheetRepository } from "../interfaces.js";
 
+/** Map a raw pg pool row (snake_case) to the camelCase shape Drizzle ORM uses */
+function rawToCamel(r: any) {
+  return {
+    id: r.id,
+    employeeId: r.employee_id,
+    weekStartDate: r.week_start_date,
+    weekEndDate: r.week_end_date,
+    status: r.status,
+    totalHours: r.total_hours,
+    submittedAt: r.submitted_at,
+    approvedAt: r.approved_at,
+    approvedBy: r.approved_by,
+    rejectionComment: r.rejection_comment,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
 function calcTotal(row: any) {
   return (row.monday || 0) + (row.tuesday || 0) + (row.wednesday || 0) + (row.thursday || 0) + (row.friday || 0) + (row.saturday || 0) + (row.sunday || 0);
 }
@@ -59,7 +77,8 @@ export class PostgresTimesheetRepository implements ITimesheetRepository {
     const countResult = await pool.query(`SELECT COUNT(*) as count FROM (${baseQuery}${whereClause}) sub`, values);
     const rowsResult = await pool.query(`${baseQuery}${whereClause} ORDER BY t.week_start_date DESC, t.created_at DESC LIMIT ${pageSize} OFFSET ${offset}`, values);
 
-    const rows = rowsResult.rows as any[];
+    // Raw pool.query returns snake_case column names — map to camelCase before enriching
+    const rows = (rowsResult.rows as any[]).map(rawToCamel);
     const total = Number((countResult.rows as any[])[0]?.count || 0);
     const enriched = await Promise.all(rows.map(enrichTimesheet));
     return { data: enriched, total, page, pageSize };
