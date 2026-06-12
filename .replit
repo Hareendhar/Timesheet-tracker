@@ -30,3 +30,8 @@ externalPort = 8081
 [[ports]]
 localPort = 19667
 externalPort = 3000
+
+[userenv]
+
+[userenv.shared]
+APP_URL = "https://18e0cf10-93d8-4912-83b4-e8389cb9deb1-00-207b9nfrihm8g.pike.replit.dev"

@@ -29,6 +29,8 @@ export function Login() {
   const error = params.get("error");
   const errorMessages: Record<string, string> = {
     not_configured: "Your account is not registered in the system. Please contact your administrator.",
+    oauth_not_configured: "Google Sign-In is not yet configured. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in the Secrets panel.",
+    redirect_uri_not_configured: "OAuth redirect URI is misconfigured. Please set APP_URL in the environment settings.",
     token_exchange_failed: "Authentication failed. Please try again.",
     invalid_state: "Authentication request expired or invalid. Please try again.",
     auth_error: "An error occurred during sign-in. Please try again.",

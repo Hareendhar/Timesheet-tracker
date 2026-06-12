@@ -58,9 +58,21 @@ if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET environment variable must be set in production");
 }
 
+// Ensure the session table exists (connect-pg-simple's built-in createTableIfMissing
+// reads a SQL file at runtime which isn't available after esbuild bundling).
+pool.query(`
+  CREATE TABLE IF NOT EXISTS "session" (
+    "sid"    varchar      NOT NULL COLLATE "default",
+    "sess"   json         NOT NULL,
+    "expire" timestamp(6) NOT NULL,
+    CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE
+  ) WITH (OIDS=FALSE);
+  CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+`).catch((err: any) => logger.error({ err }, "Failed to ensure session table"));
+
 app.use(
   session({
-    store: new PgStore({ pool, createTableIfMissing: true }),
+    store: new PgStore({ pool, createTableIfMissing: false }),
     secret: process.env.SESSION_SECRET || "dev-only-insecure-session-secret",
     resave: false,
     saveUninitialized: false,
