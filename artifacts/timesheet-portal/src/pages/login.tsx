@@ -1,9 +1,7 @@
-import { useLocation } from "wouter";
 import { useGetCurrentUser, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, User, Loader2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 type EmployeeOption = {
   id: string;
@@ -22,8 +20,6 @@ const roleBadge: Record<string, string> = {
 };
 
 export function Login() {
-  const [, setLocation] = useLocation();
-  const queryClient = useQueryClient();
   const { data: user, isLoading: authLoading } = useGetCurrentUser({
     query: { retry: false, queryKey: getGetCurrentUserQueryKey() },
   });
@@ -33,20 +29,19 @@ export function Login() {
   const [signingIn, setSigningIn] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const redirected = useRef(false);
+  // If already authenticated, hard-navigate to dashboard (avoids React Router loop)
   useEffect(() => {
-    if (user && !authLoading && !redirected.current) {
-      redirected.current = true;
-      setLocation("/");
+    if (!authLoading && user) {
+      window.location.replace("/");
     }
-  }, [user, authLoading, setLocation]);
+  }, [authLoading, user]);
 
   useEffect(() => {
     fetch("/api/auth/users")
       .then((r) => r.json())
       .then((data) => {
         const sorted = (data as EmployeeOption[]).sort((a, b) => {
-          const order = { Admin: 0, Manager: 1, Employee: 2 };
+          const order: Record<string, number> = { Admin: 0, Manager: 1, Employee: 2 };
           return (order[a.role] ?? 3) - (order[b.role] ?? 3);
         });
         setEmployees(sorted);
@@ -66,8 +61,8 @@ export function Login() {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Login failed");
-      await queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
-      setLocation("/");
+      // Hard navigation so the entire app re-initialises with a fresh session
+      window.location.href = "/";
     } catch {
       setError("Could not sign in. Please try again.");
       setSigningIn(null);
@@ -81,7 +76,6 @@ export function Login() {
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-overlay pointer-events-none" />
 
       <div className="z-10 w-full max-w-2xl space-y-6">
-        {/* Header */}
         <div className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 rounded-xl bg-primary flex items-center justify-center shadow-lg mb-3">
             <Clock className="h-8 w-8 text-white" />
@@ -90,7 +84,6 @@ export function Login() {
           <p className="text-white/60">Enterprise Workforce Timesheet Portal</p>
         </div>
 
-        {/* Card */}
         <Card className="border-0 shadow-2xl bg-card/95 backdrop-blur-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Select your account</CardTitle>

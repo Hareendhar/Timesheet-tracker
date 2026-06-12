@@ -81,15 +81,15 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   useEffect(() => {
     if (!isLoading && (!user || isError)) {
-      setLocation("/login");
+      // Hard navigation so React Query cache doesn't cause redirect loops
+      window.location.replace("/login");
     }
-  }, [isLoading, isError, user, setLocation]);
+  }, [isLoading, isError, user]);
 
   const handleLogout = async () => {
-    await logout.mutateAsync(undefined);
-    // Clear all cached data so the login page doesn't see stale user state
-    queryClient.clear();
-    setLocation("/login");
+    try { await logout.mutateAsync(undefined); } catch { /* ignore */ }
+    // Hard navigation fully resets React + React Query state — no loop possible
+    window.location.href = "/login";
   };
 
   if (isLoading) {
