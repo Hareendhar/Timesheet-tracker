@@ -46,11 +46,18 @@ export default function Timesheets() {
           <h1 className="text-3xl font-bold tracking-tight text-sidebar">My Timesheets</h1>
           <p className="text-muted-foreground mt-1">Manage and submit your weekly timesheets.</p>
         </div>
-        <Link href="/timesheets/new">
-          <Button className="w-full sm:w-auto">
-            <Plus className="mr-2 h-4 w-4" /> New Timesheet
-          </Button>
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Link href="/timesheets/new-time">
+            <Button className="w-full sm:w-auto">
+              <Plus className="mr-2 h-4 w-4" /> New Timesheet
+            </Button>
+          </Link>
+          <Link href="/timesheets/new">
+            <Button variant="outline" className="w-full sm:w-auto">
+              <Plus className="mr-2 h-4 w-4" /> New (Hours)
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card>

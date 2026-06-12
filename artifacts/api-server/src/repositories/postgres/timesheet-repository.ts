@@ -117,7 +117,15 @@ export class PostgresTimesheetRepository implements ITimesheetRepository {
         id: rowId, timesheetId: id, projectId: row.projectId, activityId: row.activityId,
         monday: row.monday || 0, tuesday: row.tuesday || 0, wednesday: row.wednesday || 0,
         thursday: row.thursday || 0, friday: row.friday || 0, saturday: row.saturday || 0,
-        sunday: row.sunday || 0, totalHours: total, comments: row.comments ?? null, createdAt: now,
+        sunday: row.sunday || 0, totalHours: total, comments: row.comments ?? null,
+        mondayStart: row.mondayStart ?? null, mondayEnd: row.mondayEnd ?? null,
+        tuesdayStart: row.tuesdayStart ?? null, tuesdayEnd: row.tuesdayEnd ?? null,
+        wednesdayStart: row.wednesdayStart ?? null, wednesdayEnd: row.wednesdayEnd ?? null,
+        thursdayStart: row.thursdayStart ?? null, thursdayEnd: row.thursdayEnd ?? null,
+        fridayStart: row.fridayStart ?? null, fridayEnd: row.fridayEnd ?? null,
+        saturdayStart: row.saturdayStart ?? null, saturdayEnd: row.saturdayEnd ?? null,
+        sundayStart: row.sundayStart ?? null, sundayEnd: row.sundayEnd ?? null,
+        createdAt: now,
       });
     }
 
@@ -139,7 +147,15 @@ export class PostgresTimesheetRepository implements ITimesheetRepository {
         id: rowId, timesheetId: id, projectId: row.projectId, activityId: row.activityId,
         monday: row.monday || 0, tuesday: row.tuesday || 0, wednesday: row.wednesday || 0,
         thursday: row.thursday || 0, friday: row.friday || 0, saturday: row.saturday || 0,
-        sunday: row.sunday || 0, totalHours: total, comments: row.comments ?? null, createdAt: now,
+        sunday: row.sunday || 0, totalHours: total, comments: row.comments ?? null,
+        mondayStart: row.mondayStart ?? null, mondayEnd: row.mondayEnd ?? null,
+        tuesdayStart: row.tuesdayStart ?? null, tuesdayEnd: row.tuesdayEnd ?? null,
+        wednesdayStart: row.wednesdayStart ?? null, wednesdayEnd: row.wednesdayEnd ?? null,
+        thursdayStart: row.thursdayStart ?? null, thursdayEnd: row.thursdayEnd ?? null,
+        fridayStart: row.fridayStart ?? null, fridayEnd: row.fridayEnd ?? null,
+        saturdayStart: row.saturdayStart ?? null, saturdayEnd: row.saturdayEnd ?? null,
+        sundayStart: row.sundayStart ?? null, sundayEnd: row.sundayEnd ?? null,
+        createdAt: now,
       });
     }
     await db.update(timesheetsTable).set({ totalHours, updatedAt: now }).where(eq(timesheetsTable.id, id));

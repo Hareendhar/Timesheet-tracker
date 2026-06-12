@@ -11,6 +11,8 @@ import Dashboard from "@/pages/dashboard";
 import Timesheets from "@/pages/timesheets";
 import TimesheetNew from "@/pages/timesheet-new";
 import TimesheetDetail from "@/pages/timesheet-detail";
+import TimesheetNewTime from "@/pages/timesheet-new-time";
+import TimesheetDetailTime from "@/pages/timesheet-detail-time";
 import Approvals from "@/pages/approvals";
 import Employees from "@/pages/employees";
 import EmployeeProfile from "@/pages/employee-profile";
@@ -59,6 +61,8 @@ function Router() {
             <Route path="/" component={Dashboard} />
             <Route path="/timesheets" component={Timesheets} />
             <Route path="/timesheets/new" component={TimesheetNew} />
+            <Route path="/timesheets/new-time" component={TimesheetNewTime} />
+            <Route path="/timesheets/:id/time" component={TimesheetDetailTime} />
             <Route path="/timesheets/:id" component={TimesheetDetail} />
             <Route path="/approvals">
               <RequireRole roles={["Manager", "Admin"]}>
