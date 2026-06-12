@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetCurrentUser, useLogout, useListNotifications, useGlobalSearch,
   getGetCurrentUserQueryKey, getListNotificationsQueryKey, getGlobalSearchQueryKey,
@@ -37,6 +38,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     query: { retry: false, queryKey: getGetCurrentUserQueryKey() },
   });
   const logout = useLogout();
+  const queryClient = useQueryClient();
 
   const { data: notifications } = useListNotifications(
     { unreadOnly: true, pageSize: 5 },
@@ -85,6 +87,8 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const handleLogout = async () => {
     await logout.mutateAsync(undefined);
+    // Clear all cached data so the login page doesn't see stale user state
+    queryClient.clear();
     setLocation("/login");
   };
 

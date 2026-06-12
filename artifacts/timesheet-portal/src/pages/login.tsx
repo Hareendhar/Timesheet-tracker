@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { useGetCurrentUser, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, User, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 type EmployeeOption = {
@@ -33,8 +33,12 @@ export function Login() {
   const [signingIn, setSigningIn] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const redirected = useRef(false);
   useEffect(() => {
-    if (user && !authLoading) setLocation("/");
+    if (user && !authLoading && !redirected.current) {
+      redirected.current = true;
+      setLocation("/");
+    }
   }, [user, authLoading, setLocation]);
 
   useEffect(() => {
