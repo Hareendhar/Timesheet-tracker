@@ -4,3 +4,5 @@
 - [EmployeeProfile shape](employee-profile-shape.md) — nested: `profile.employee.*`, `profile.metrics.*` with fields totalSubmitted/approved/rejected/pending/approvalRate
 - [Dashboard API fields](dashboard-api-fields.md) — DashboardStats has no missingTimesheets/approvedThisWeek/totalHoursLogged; use timesheetsApproved/totalEmployees/complianceRate
 - [pool.query for raw SQL](pool-query-raw.md) — Drizzle sql.raw() only takes 1 arg; use imported `pool` from @workspace/db for parameterized raw queries
+- [ASP.NET + Npgsql enum handling](dotnet-npgsql-enums.md) — EF Core LINQ WHERE on PostgreSQL enum columns fails; use raw SQL with ::text casts and EnableUnmappedTypes()
+- [Npgsql connection string format](npgsql-connection-string.md) — Npgsql rejects postgres:// URI format; must convert to key=value format at startup
