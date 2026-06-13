@@ -238,28 +238,31 @@ public class EmployeeRepository : IEmployeeRepository
         var employee = await FindById(id);
         if (employee == null) return null;
 
-        var metrics = await _db.Database.SqlQueryRaw<MetricsRow>(@"
-            SELECT
-                COUNT(*)::int as total_submitted,
-                COUNT(CASE WHEN status::text = 'Approved' THEN 1 END)::int as approved,
-                COUNT(CASE WHEN status::text IN ('Draft', 'Submitted') THEN 1 END)::int as pending,
-                COUNT(CASE WHEN status::text = 'Rejected' THEN 1 END)::int as rejected
-            FROM timesheets WHERE employee_id = {0}", id).ToListAsync();
+        int totalSubmitted = 0, approved = 0, pending = 0, rejected = 0;
+        await using var conn = new NpgsqlConnection(_cs);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand(
+            "SELECT " +
+            "COUNT(*)::int as total_submitted, " +
+            "COUNT(CASE WHEN status::text = 'Approved' THEN 1 END)::int as approved, " +
+            "COUNT(CASE WHEN status::text IN ('Draft','Submitted') THEN 1 END)::int as pending, " +
+            "COUNT(CASE WHEN status::text = 'Rejected' THEN 1 END)::int as rejected " +
+            "FROM timesheets WHERE employee_id = $1", conn);
+        cmd.Parameters.AddWithValue(id);
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            totalSubmitted = reader.GetInt32(0);
+            approved = reader.GetInt32(1);
+            pending = reader.GetInt32(2);
+            rejected = reader.GetInt32(3);
+        }
 
-        var m = metrics.FirstOrDefault() ?? new MetricsRow();
-        var approvalRate = m.TotalSubmitted > 0 ? (int)Math.Round((double)m.Approved / m.TotalSubmitted * 100) : 0;
-
+        var approvalRate = totalSubmitted > 0 ? (int)Math.Round((double)approved / totalSubmitted * 100) : 0;
         return new
         {
             employee,
-            metrics = new
-            {
-                totalSubmitted = m.TotalSubmitted,
-                pending = m.Pending,
-                rejected = m.Rejected,
-                approved = m.Approved,
-                approvalRate,
-            }
+            metrics = new { totalSubmitted, approved, pending, rejected, approvalRate }
         };
     }
 
@@ -269,45 +272,53 @@ public class EmployeeRepository : IEmployeeRepository
         if (manager == null) return null;
 
         var reports = await _db.Employees.Where(e => e.ManagerId == managerId).ToListAsync();
+        var managerName = (manager as dynamic)?.name as string;
 
         var directReports = new List<object>();
+        await using var conn = new NpgsqlConnection(_cs);
+        await conn.OpenAsync();
+
         foreach (var emp in reports)
         {
-            var stats = await _db.Database.SqlQueryRaw<DirectReportStats>(@"
-                SELECT
-                    COUNT(CASE WHEN status::text IN ('Submitted','Approved','Rejected') THEN 1 END)::int as submitted,
-                    COUNT(CASE WHEN status::text = 'Approved' THEN 1 END)::int as approved,
-                    COUNT(CASE WHEN status::text = 'Rejected' THEN 1 END)::int as rejected
-                FROM timesheets WHERE employee_id = {0}", emp.Id).ToListAsync();
-
-            var s = stats.FirstOrDefault() ?? new DirectReportStats();
+            await using var cmd2 = new NpgsqlCommand(
+                "SELECT " +
+                "COUNT(CASE WHEN status::text IN ('Submitted','Approved','Rejected') THEN 1 END)::int, " +
+                "COUNT(CASE WHEN status::text = 'Approved' THEN 1 END)::int, " +
+                "COUNT(CASE WHEN status::text = 'Rejected' THEN 1 END)::int " +
+                "FROM timesheets WHERE employee_id = $1", conn);
+            cmd2.Parameters.AddWithValue(emp.Id);
+            int sub = 0, appr = 0, rej = 0;
+            await using var r2 = await cmd2.ExecuteReaderAsync();
+            if (await r2.ReadAsync()) { sub = r2.GetInt32(0); appr = r2.GetInt32(1); rej = r2.GetInt32(2); }
             directReports.Add(new
             {
-                employee = ToObjWithManager(emp, (manager as dynamic)?.name as string),
-                submitted = s.Submitted,
-                approved = s.Approved,
-                rejected = s.Rejected,
+                employee = ToObjWithManager(emp, managerName),
+                submitted = sub,
+                approved = appr,
+                rejected = rej,
             });
         }
 
-        var mmResult = await _db.Database.SqlQueryRaw<ManagerMetrics>(@"
-            SELECT
-                COUNT(CASE WHEN status::text = 'Approved' THEN 1 END)::int as approved,
-                COUNT(CASE WHEN status::text = 'Rejected' THEN 1 END)::int as rejected,
-                COUNT(CASE WHEN status::text = 'Submitted' THEN 1 END)::int as pending_approvals
-            FROM timesheets
-            WHERE employee_id IN (SELECT id FROM employees WHERE manager_id = {0})", managerId).ToListAsync();
+        await using var cmd3 = new NpgsqlCommand(
+            "SELECT " +
+            "COUNT(CASE WHEN status::text = 'Approved' THEN 1 END)::int, " +
+            "COUNT(CASE WHEN status::text = 'Rejected' THEN 1 END)::int, " +
+            "COUNT(CASE WHEN status::text = 'Submitted' THEN 1 END)::int " +
+            "FROM timesheets WHERE employee_id IN (SELECT id FROM employees WHERE manager_id = $1)", conn);
+        cmd3.Parameters.AddWithValue(managerId);
+        int mmApproved = 0, mmRejected = 0, mmPending = 0;
+        await using var r3 = await cmd3.ExecuteReaderAsync();
+        if (await r3.ReadAsync()) { mmApproved = r3.GetInt32(0); mmRejected = r3.GetInt32(1); mmPending = r3.GetInt32(2); }
 
-        var mm = mmResult.FirstOrDefault() ?? new ManagerMetrics();
         return new
         {
             manager,
             metrics = new
             {
                 totalReports = reports.Count,
-                approved = mm.Approved,
-                rejected = mm.Rejected,
-                pendingApprovals = mm.PendingApprovals,
+                approved = mmApproved,
+                rejected = mmRejected,
+                pendingApprovals = mmPending,
             },
             directReports,
         };
@@ -368,24 +379,3 @@ public class EmployeeRepository : IEmployeeRepository
     private static object ToObjWithManager(Employee e, string? managerName) => ToObj(e, managerName);
 }
 
-file class MetricsRow
-{
-    public int TotalSubmitted { get; set; }
-    public int Approved { get; set; }
-    public int Pending { get; set; }
-    public int Rejected { get; set; }
-}
-
-file class DirectReportStats
-{
-    public int Submitted { get; set; }
-    public int Approved { get; set; }
-    public int Rejected { get; set; }
-}
-
-file class ManagerMetrics
-{
-    public int Approved { get; set; }
-    public int Rejected { get; set; }
-    public int PendingApprovals { get; set; }
-}

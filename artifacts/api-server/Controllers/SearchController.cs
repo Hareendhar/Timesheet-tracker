@@ -66,14 +66,14 @@ public class SearchController : ControllerBase
                 var empTask = _employeeRepo.FindAll(1, 5, q, null, null, null, user.Id);
                 var projTask = _projectRepo.FindAll(1, 5, "Active", null, q);
                 var clientTask = _clientRepo.FindAll(1, 5, "Active", q);
-                var tsTask = _timesheetRepo.FindAll(1, 5, null, null, null, user.Id);
+                var tsTask = SearchTimesheets(q, 5, user.Id);
                 await Task.WhenAll(empTask, projTask, clientTask, tsTask);
                 return Ok(new
                 {
                     employees = empTask.Result.Data,
                     projects = projTask.Result.Data,
                     clients = clientTask.Result.Data,
-                    timesheets = tsTask.Result.Data,
+                    timesheets = await tsTask,
                 });
             }
 
@@ -96,17 +96,23 @@ public class SearchController : ControllerBase
         catch (Exception e) { return StatusCode(500, new { error = e.Message }); }
     }
 
-    private async Task<List<object>> SearchTimesheets(string q, int limit)
+    private async Task<List<object>> SearchTimesheets(string q, int limit, string? managerId = null)
     {
         var rows = new List<object>();
         await using var conn = new NpgsqlConnection(_cs);
         await conn.OpenAsync();
-        await using var cmd = new NpgsqlCommand(
+
+        var managerFilter = managerId != null ? "AND e.manager_id = $2 " : "";
+        var sql =
             "SELECT t.id, t.employee_id, t.week_start_date, t.week_end_date, t.status::text, t.total_hours, e.name as employee_name " +
             "FROM timesheets t JOIN employees e ON t.employee_id = e.id " +
-            "WHERE e.name ILIKE $1 OR t.week_start_date ILIKE $1 " +
-            $"ORDER BY t.updated_at DESC LIMIT {limit}", conn);
+            $"WHERE (e.name ILIKE $1 OR t.week_start_date ILIKE $1) {managerFilter}" +
+            $"ORDER BY t.updated_at DESC LIMIT {limit}";
+
+        await using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue($"%{q}%");
+        if (managerId != null) cmd.Parameters.AddWithValue(managerId);
+
         await using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
