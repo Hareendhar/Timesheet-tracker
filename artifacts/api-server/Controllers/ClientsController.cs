@@ -40,6 +40,9 @@ public class ClientsController : ControllerBase
     {
         try
         {
+            if (string.IsNullOrWhiteSpace(body.GetValueOrDefault("name")?.ToString()))
+                return BadRequest(new { error = "name is required" });
+
             var user = HttpContext.Session.GetUser()!;
             var client = await _clientRepo.Create(body);
             await Audit(user, "Client Created", "Client", GetId(client), null, body);

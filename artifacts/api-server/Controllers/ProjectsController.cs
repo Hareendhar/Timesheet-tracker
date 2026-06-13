@@ -41,6 +41,13 @@ public class ProjectsController : ControllerBase
     {
         try
         {
+            if (string.IsNullOrWhiteSpace(body.GetValueOrDefault("name")?.ToString()))
+                return BadRequest(new { error = "name is required" });
+            if (string.IsNullOrWhiteSpace(body.GetValueOrDefault("projectCode")?.ToString()))
+                return BadRequest(new { error = "projectCode is required" });
+            if (string.IsNullOrWhiteSpace(body.GetValueOrDefault("clientId")?.ToString()))
+                return BadRequest(new { error = "clientId is required" });
+
             var user = HttpContext.Session.GetUser()!;
             var project = await _projectRepo.Create(body);
             await Audit(user, "Project Created", "Project", GetId(project), null, body);

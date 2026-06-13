@@ -43,6 +43,15 @@ public class EmployeesController : ControllerBase
     {
         try
         {
+            if (string.IsNullOrWhiteSpace(body.GetValueOrDefault("name")?.ToString()))
+                return BadRequest(new { error = "name is required" });
+            if (string.IsNullOrWhiteSpace(body.GetValueOrDefault("email")?.ToString()))
+                return BadRequest(new { error = "email is required" });
+            if (string.IsNullOrWhiteSpace(body.GetValueOrDefault("department")?.ToString()))
+                return BadRequest(new { error = "department is required" });
+            if (string.IsNullOrWhiteSpace(body.GetValueOrDefault("designation")?.ToString()))
+                return BadRequest(new { error = "designation is required" });
+
             var user = HttpContext.Session.GetUser()!;
             var employee = await _employeeRepo.Create(body);
             await Audit(user, "Employee Created", "Employee", GetId(employee), null, body);

@@ -76,7 +76,7 @@ public class ProjectRepository : IProjectRepository
     public async Task<object?> Create(Dictionary<string, object?> data)
     {
         var now = DateTime.UtcNow;
-        var status = GetValidEnum(data, "status", new[] { "Active", "Inactive", "Completed" }, "Active");
+        var status = GetValidEnum(data, "status", new[] { "Active", "Inactive" }, "Active");
         var id = IdGenerator.NewId();
 
         await using var conn = new NpgsqlConnection(_cs);
@@ -103,7 +103,7 @@ public class ProjectRepository : IProjectRepository
         if (data.TryGetValue("name", out var n) && n != null) p.Name = n.ToString()!;
         if (data.TryGetValue("clientId", out var ci) && ci != null) p.ClientId = ci.ToString()!;
         if (data.TryGetValue("status", out var s) && s != null)
-            p.Status = GetValidEnum(data, "status", new[] { "Active", "Inactive", "Completed" }, p.Status);
+            p.Status = GetValidEnum(data, "status", new[] { "Active", "Inactive" }, p.Status);
         p.UpdatedAt = DateTime.UtcNow;
 
         await using var conn = new NpgsqlConnection(_cs);

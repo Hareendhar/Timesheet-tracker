@@ -205,6 +205,20 @@ public class TimesheetRepository : ITimesheetRepository
                 ["saturday"] = r.saturday,
                 ["sunday"] = r.sunday,
                 ["comments"] = r.comments,
+                ["mondayStart"] = r.mondayStart,
+                ["mondayEnd"] = r.mondayEnd,
+                ["tuesdayStart"] = r.tuesdayStart,
+                ["tuesdayEnd"] = r.tuesdayEnd,
+                ["wednesdayStart"] = r.wednesdayStart,
+                ["wednesdayEnd"] = r.wednesdayEnd,
+                ["thursdayStart"] = r.thursdayStart,
+                ["thursdayEnd"] = r.thursdayEnd,
+                ["fridayStart"] = r.fridayStart,
+                ["fridayEnd"] = r.fridayEnd,
+                ["saturdayStart"] = r.saturdayStart,
+                ["saturdayEnd"] = r.saturdayEnd,
+                ["sundayStart"] = r.sundayStart,
+                ["sundayEnd"] = r.sundayEnd,
             });
         }
         return await Create(employeeId, targetWeekStartDate, rows);
