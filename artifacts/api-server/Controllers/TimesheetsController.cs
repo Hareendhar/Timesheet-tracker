@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TimesheetApi.Helpers;
 using TimesheetApi.Middleware;
+using TimesheetApi.Models;
 using TimesheetApi.Repositories;
 
 namespace TimesheetApi.Controllers;
@@ -269,6 +270,7 @@ public class TimesheetsController : ControllerBase
             }
             return Ok(ts);
         }
+        catch (InvalidTransitionException e) { return Conflict(new { error = e.Message }); }
         catch (Exception e) { return StatusCode(500, new { error = e.Message }); }
     }
 
@@ -310,6 +312,7 @@ public class TimesheetsController : ControllerBase
             });
             return Ok(ts);
         }
+        catch (InvalidTransitionException e) { return Conflict(new { error = e.Message }); }
         catch (Exception e) { return StatusCode(500, new { error = e.Message }); }
     }
 
@@ -354,6 +357,7 @@ public class TimesheetsController : ControllerBase
             });
             return Ok(ts);
         }
+        catch (InvalidTransitionException e) { return Conflict(new { error = e.Message }); }
         catch (Exception e) { return StatusCode(500, new { error = e.Message }); }
     }
 

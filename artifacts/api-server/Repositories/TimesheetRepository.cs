@@ -134,33 +134,66 @@ public class TimesheetRepository : ITimesheetRepository
 
     public async Task<object?> Submit(string id)
     {
-        await _db.Timesheets.Where(t => t.Id == id)
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(t => t.Status, "Submitted")
-                .SetProperty(t => t.SubmittedAt, DateTime.UtcNow)
-                .SetProperty(t => t.UpdatedAt, DateTime.UtcNow));
+        await using var conn = new NpgsqlConnection(_connectionString);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand(
+            "UPDATE timesheets SET status = 'Submitted', submitted_at = NOW(), updated_at = NOW() WHERE id = $1 AND status::text IN ('Draft','Rejected')",
+            conn);
+        cmd.Parameters.AddWithValue(id);
+        var affected = await cmd.ExecuteNonQueryAsync();
+        if (affected == 0)
+        {
+            var current = await GetCurrentStatus(conn, id);
+            if (current == null) return null;
+            throw new InvalidTransitionException(current, "submit");
+        }
         return await FindById(id);
     }
 
     public async Task<object?> Approve(string id, string approvedBy, string? comment)
     {
-        await _db.Timesheets.Where(t => t.Id == id)
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(t => t.Status, "Approved")
-                .SetProperty(t => t.ApprovedAt, DateTime.UtcNow)
-                .SetProperty(t => t.ApprovedBy, approvedBy)
-                .SetProperty(t => t.UpdatedAt, DateTime.UtcNow));
+        await using var conn = new NpgsqlConnection(_connectionString);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand(
+            "UPDATE timesheets SET status = 'Approved', approved_at = NOW(), approved_by = $2, updated_at = NOW() WHERE id = $1 AND status::text = 'Submitted'",
+            conn);
+        cmd.Parameters.AddWithValue(id);
+        cmd.Parameters.AddWithValue(approvedBy);
+        var affected = await cmd.ExecuteNonQueryAsync();
+        if (affected == 0)
+        {
+            var current = await GetCurrentStatus(conn, id);
+            if (current == null) return null;
+            throw new InvalidTransitionException(current, "approve");
+        }
         return await FindById(id);
     }
 
     public async Task<object?> Reject(string id, string comment)
     {
-        await _db.Timesheets.Where(t => t.Id == id)
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(t => t.Status, "Rejected")
-                .SetProperty(t => t.RejectionComment, comment)
-                .SetProperty(t => t.UpdatedAt, DateTime.UtcNow));
+        await using var conn = new NpgsqlConnection(_connectionString);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand(
+            "UPDATE timesheets SET status = 'Rejected', rejection_comment = $2, updated_at = NOW() WHERE id = $1 AND status::text = 'Submitted'",
+            conn);
+        cmd.Parameters.AddWithValue(id);
+        cmd.Parameters.AddWithValue(comment);
+        var affected = await cmd.ExecuteNonQueryAsync();
+        if (affected == 0)
+        {
+            var current = await GetCurrentStatus(conn, id);
+            if (current == null) return null;
+            throw new InvalidTransitionException(current, "reject");
+        }
         return await FindById(id);
+    }
+
+    private static async Task<string?> GetCurrentStatus(NpgsqlConnection conn, string id)
+    {
+        await using var cmd = new NpgsqlCommand("SELECT status::text FROM timesheets WHERE id = $1", conn);
+        cmd.Parameters.AddWithValue(id);
+        var result = await cmd.ExecuteScalarAsync();
+        return result is DBNull || result == null ? null : result.ToString();
     }
 
     public async Task<(int Processed, int Succeeded, int Failed)> BulkAction(
