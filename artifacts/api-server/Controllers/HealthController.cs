@@ -6,6 +6,9 @@ namespace TimesheetApi.Controllers;
 [Route("api")]
 public class HealthController : ControllerBase
 {
-    [HttpGet("healthz")]
+    [HttpGet("health")]
     public IActionResult Health() => Ok(new { status = "ok" });
+
+    [HttpGet("healthz")]
+    public IActionResult Healthz() => Ok(new { status = "ok" });
 }

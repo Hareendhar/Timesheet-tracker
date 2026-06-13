@@ -1,6 +1,7 @@
 using Npgsql;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Community.Microsoft.Extensions.Caching.PostgreSql;
 using TimesheetApi.Data;
 using TimesheetApi.Repositories;
 
@@ -25,7 +26,6 @@ try
     builder.Configuration["ConnectionStrings:Default"] = connectionString;
 
     var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
-    // Allow reading unmapped PostgreSQL enum types as their text labels
     dataSourceBuilder.EnableUnmappedTypes();
     var dataSource = dataSourceBuilder.Build();
 
@@ -33,14 +33,21 @@ try
         options.UseNpgsql(dataSource)
                .UseSnakeCaseNamingConvention());
 
-    // ── Session ────────────────────────────────────────────────────────────────
-    builder.Services.AddDistributedMemoryCache();
+    // ── Session (PostgreSQL-backed distributed cache) ─────────────────────────
+    builder.Services.AddDistributedPostgreSqlCache(options =>
+    {
+        options.ConnectionString = connectionString;
+        options.SchemaName = "public";
+        options.TableName = "aspnet_session_cache";
+        options.CreateInfrastructure = true;
+    });
+
     builder.Services.AddSession(options =>
     {
         options.IdleTimeout = TimeSpan.FromHours(24);
         options.Cookie.HttpOnly = true;
         options.Cookie.IsEssential = true;
-        options.Cookie.SameSite = SameSiteMode.None;
+        options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
 
@@ -62,14 +69,36 @@ try
                 System.Text.Json.Serialization.JsonIgnoreCondition.Never;
         });
 
+    // ── CORS ──────────────────────────────────────────────────────────────────
+    // Explicit origins via env var take precedence; otherwise allow known Replit
+    // proxy domains and localhost so the React dev server can reach the API.
+    var explicitOrigins = Environment.GetEnvironmentVariable("CORS_ORIGIN")
+        ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        ?? Array.Empty<string>();
+
     builder.Services.AddCors(options =>
     {
         options.AddDefaultPolicy(policy =>
-            policy
-                .SetIsOriginAllowed(_ => true)
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials());
+        {
+            if (explicitOrigins.Length > 0)
+            {
+                policy.WithOrigins(explicitOrigins);
+            }
+            else
+            {
+                policy.SetIsOriginAllowed(origin =>
+                {
+                    if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
+                    var host = uri.Host;
+                    return host == "localhost"
+                        || host.EndsWith(".replit.dev", StringComparison.OrdinalIgnoreCase)
+                        || host.EndsWith(".repl.co", StringComparison.OrdinalIgnoreCase)
+                        || host.EndsWith(".replit.app", StringComparison.OrdinalIgnoreCase)
+                        || host.EndsWith(".kirk.replit.dev", StringComparison.OrdinalIgnoreCase);
+                });
+            }
+            policy.AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+        });
     });
 
     // ── Port ──────────────────────────────────────────────────────────────────
