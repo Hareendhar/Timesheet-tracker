@@ -12,7 +12,7 @@ public class AuditLogsController : ControllerBase
     public AuditLogsController(IAuditRepository auditRepo) { _auditRepo = auditRepo; }
 
     [HttpGet("audit-logs")]
-    [RequireRole("Admin")]
+    [RequireRole("Admin", "HR")]
     public async Task<IActionResult> GetAuditLogs(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,

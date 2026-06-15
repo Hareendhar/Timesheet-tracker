@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   LayoutDashboard, Clock, ClipboardCheck, Users, Building2, Briefcase,
-  Activity, Bell, Search, Settings, LogOut, FileText, Menu, X, ChevronRight,
+  Activity, Bell, Search, Settings, LogOut, FileText, X, ChevronRight,
+  ChevronDown, Database,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -45,7 +46,6 @@ export function AppLayout({ children }: AppLayoutProps) {
     { query: { enabled: !!user, queryKey: getListNotificationsQueryKey({ unreadOnly: true, pageSize: 5 }) } }
   );
 
-  // Global search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const debouncedQuery = useDebounce(searchQuery, 300);
@@ -62,7 +62,6 @@ export function AppLayout({ children }: AppLayoutProps) {
     (searchResults.clients?.length ?? 0) > 0
   );
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -81,14 +80,12 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   useEffect(() => {
     if (!isLoading && (!user || isError)) {
-      // Hard navigation so React Query cache doesn't cause redirect loops
       window.location.replace("/login");
     }
   }, [isLoading, isError, user]);
 
   const handleLogout = async () => {
     try { await logout.mutateAsync(undefined); } catch { /* ignore */ }
-    // Hard navigation fully resets React + React Query state — no loop possible
     window.location.href = "/login";
   };
 
@@ -99,20 +96,134 @@ export function AppLayout({ children }: AppLayoutProps) {
   if (!user) return null;
 
   const isAdmin = user.role === "Admin";
+  const isHR = user.role === "HR";
   const isManager = user.role === "Manager" || isAdmin;
+  const canSeeMasters = isAdmin || isHR;
 
-  const navItems = [
+  const mastersInPath = ["/employees", "/clients", "/projects", "/activities"].some(
+    p => location === p || location.startsWith(p + "/")
+  );
+
+  const mastersItems = [
+    { icon: Users, label: "Employees", href: "/employees", color: "text-emerald-400", adminOnly: false },
+    ...(isAdmin ? [
+      { icon: Building2, label: "Clients", href: "/clients", color: "text-sky-400", adminOnly: true },
+      { icon: Briefcase, label: "Projects", href: "/projects", color: "text-orange-400", adminOnly: true },
+      { icon: Activity, label: "Activities", href: "/activities", color: "text-pink-400", adminOnly: true },
+    ] : []),
+  ];
+
+  const topNavItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/", color: "text-[#29ABE2]" },
     { icon: Clock, label: "My Timesheets", href: "/timesheets", color: "text-violet-400" },
     ...(isManager ? [{ icon: ClipboardCheck, label: "Approvals", href: "/approvals", color: "text-amber-400" }] : []),
-    ...(isAdmin ? [
-      { icon: Users, label: "Employees", href: "/employees", color: "text-emerald-400" },
-      { icon: Building2, label: "Clients", href: "/clients", color: "text-sky-400" },
-      { icon: Briefcase, label: "Projects", href: "/projects", color: "text-orange-400" },
-      { icon: Activity, label: "Activities", href: "/activities", color: "text-pink-400" },
-      { icon: FileText, label: "Audit Logs", href: "/audit-logs", color: "text-slate-300" },
-    ] : []),
   ];
+
+  const bottomNavItems = [
+    ...((isAdmin || isHR) ? [{ icon: FileText, label: "Audit Logs", href: "/audit-logs", color: "text-slate-300" }] : []),
+  ];
+
+  const SidebarNav = () => {
+    const [mastersOpen, setMastersOpen] = useState(mastersInPath);
+
+    return (
+      <nav className="flex-1 px-3 pt-4 space-y-0.5 overflow-y-auto">
+        {topNavItems.map((item) => {
+          const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150 ${
+                isActive
+                  ? "bg-sidebar-primary/90 text-white shadow-md shadow-sidebar-primary/20"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white"
+              }`}
+            >
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                isActive ? "bg-white/15" : "bg-sidebar-accent/40 group-hover:bg-sidebar-accent/70"
+              }`}>
+                <item.icon className={`h-[15px] w-[15px] ${isActive ? "text-white" : item.color}`} />
+              </div>
+              <span className="flex-1 tracking-[-0.01em]">{item.label}</span>
+              {isActive && <ChevronRight className="h-3.5 w-3.5 opacity-60" />}
+            </Link>
+          );
+        })}
+
+        {canSeeMasters && (
+          <div>
+            <button
+              onClick={() => setMastersOpen(o => !o)}
+              className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150 ${
+                mastersInPath && !mastersOpen
+                  ? "bg-sidebar-primary/90 text-white"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white"
+              }`}
+            >
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                mastersInPath && !mastersOpen ? "bg-white/15" : "bg-sidebar-accent/40 group-hover:bg-sidebar-accent/70"
+              }`}>
+                <Database className={`h-[15px] w-[15px] ${mastersInPath && !mastersOpen ? "text-white" : "text-teal-400"}`} />
+              </div>
+              <span className="flex-1 tracking-[-0.01em] text-left">Masters</span>
+              <ChevronDown className={`h-3.5 w-3.5 opacity-60 transition-transform duration-200 ${mastersOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {mastersOpen && (
+              <div className="ml-4 mt-0.5 pl-3 border-l border-sidebar-border/30 space-y-0.5">
+                {mastersItems.map((item) => {
+                  const isActive = location === item.href || location.startsWith(item.href + "/");
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`group flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-150 ${
+                        isActive
+                          ? "bg-sidebar-primary/90 text-white shadow-md shadow-sidebar-primary/20"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white"
+                      }`}
+                    >
+                      <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                        isActive ? "bg-white/15" : "bg-sidebar-accent/40 group-hover:bg-sidebar-accent/70"
+                      }`}>
+                        <item.icon className={`h-[13px] w-[13px] ${isActive ? "text-white" : item.color}`} />
+                      </div>
+                      <span className="flex-1 tracking-[-0.01em]">{item.label}</span>
+                      {isActive && <ChevronRight className="h-3 w-3 opacity-60" />}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {bottomNavItems.map((item) => {
+          const isActive = location === item.href || location.startsWith(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150 ${
+                isActive
+                  ? "bg-sidebar-primary/90 text-white shadow-md shadow-sidebar-primary/20"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white"
+              }`}
+            >
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                isActive ? "bg-white/15" : "bg-sidebar-accent/40 group-hover:bg-sidebar-accent/70"
+              }`}>
+                <item.icon className={`h-[15px] w-[15px] ${isActive ? "text-white" : item.color}`} />
+              </div>
+              <span className="flex-1 tracking-[-0.01em]">{item.label}</span>
+              {isActive && <ChevronRight className="h-3.5 w-3.5 opacity-60" />}
+            </Link>
+          );
+        })}
+      </nav>
+    );
+  };
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -144,31 +255,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 pt-4 space-y-0.5 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150 ${
-                  isActive
-                    ? "bg-sidebar-primary/90 text-white shadow-md shadow-sidebar-primary/20"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white"
-                }`}
-              >
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                  isActive ? "bg-white/15" : "bg-sidebar-accent/40 group-hover:bg-sidebar-accent/70"
-                }`}>
-                  <item.icon className={`h-[15px] w-[15px] ${isActive ? "text-white" : item.color}`} />
-                </div>
-                <span className="flex-1 tracking-[-0.01em]">{item.label}</span>
-                {isActive && <ChevronRight className="h-3.5 w-3.5 opacity-60" />}
-              </Link>
-            );
-          })}
-        </nav>
+        <SidebarNav />
 
         {/* Settings footer */}
         <div className="p-3 border-t border-sidebar-border/40">
@@ -218,7 +305,6 @@ export function AppLayout({ children }: AppLayoutProps) {
                 </button>
               )}
 
-              {/* Search Results Dropdown */}
               {searchOpen && debouncedQuery.length >= 2 && (
                 <div className="absolute top-full mt-2 left-0 right-0 bg-card border border-border/60 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
                   {!hasResults ? (
@@ -232,7 +318,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                             <button
                               key={emp.id}
                               className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg hover:bg-muted/60 text-left text-sm transition-colors"
-                              onClick={() => handleSearchNav(isAdmin ? `/employees/${emp.id}` : "/timesheets")}
+                              onClick={() => handleSearchNav((isAdmin || isHR) ? `/employees/${emp.id}` : "/timesheets")}
                             >
                               <Avatar className="h-6 w-6 shrink-0">
                                 <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">{emp.name?.charAt(0)}</AvatarFallback>

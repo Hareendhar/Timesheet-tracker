@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "python-3.11", "dotnet-9.0"]
+modules = ["nodejs-24", "python-3.11", "dotnet-9.0", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -35,3 +35,6 @@ externalPort = 3000
 
 [userenv.shared]
 APP_URL = "https://18e0cf10-93d8-4912-83b4-e8389cb9deb1-00-207b9nfrihm8g.pike.replit.dev"
+
+[nix]
+channel = "stable-25_05"

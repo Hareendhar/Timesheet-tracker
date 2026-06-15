@@ -2,7 +2,7 @@ import { pgTable, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const roleEnum = pgEnum("employee_role", ["Employee", "Manager", "Admin"]);
+export const roleEnum = pgEnum("employee_role", ["Employee", "Manager", "Admin", "HR"]);
 export const statusEnum = pgEnum("employee_status", ["Active", "Inactive"]);
 
 export const employeesTable = pgTable("employees", {

@@ -26,7 +26,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("stats")]
-    [RequireRole("Admin", "Manager")]
+    [RequireRole("Admin", "Manager", "HR")]
     public async Task<IActionResult> GetStats()
     {
         try
@@ -82,7 +82,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("timesheet-status-breakdown")]
-    [RequireRole("Admin", "Manager")]
+    [RequireRole("Admin", "Manager", "HR")]
     public async Task<IActionResult> GetStatusBreakdown()
     {
         try { return Ok(await _timesheetRepo.GetStatusBreakdown()); }
@@ -90,7 +90,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("recent-activity")]
-    [RequireRole("Admin", "Manager")]
+    [RequireRole("Admin", "Manager", "HR")]
     public async Task<IActionResult> GetRecentActivity([FromQuery] int limit = 10)
     {
         try { return Ok(await _timesheetRepo.GetRecentActivity(limit)); }
@@ -98,7 +98,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("compliance-overview")]
-    [RequireRole("Admin", "Manager")]
+    [RequireRole("Admin", "Manager", "HR")]
     public async Task<IActionResult> GetComplianceOverview()
     {
         try { return Ok(await _timesheetRepo.GetComplianceOverview()); }

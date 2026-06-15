@@ -66,7 +66,7 @@ function Router() {
               </RequireRole>
             </Route>
             <Route path="/employees">
-              <RequireRole roles={["Admin"]}>
+              <RequireRole roles={["Admin", "HR"]}>
                 <Employees />
               </RequireRole>
             </Route>
@@ -90,7 +90,7 @@ function Router() {
               </RequireRole>
             </Route>
             <Route path="/audit-logs">
-              <RequireRole roles={["Admin"]}>
+              <RequireRole roles={["Admin", "HR"]}>
                 <AuditLogs />
               </RequireRole>
             </Route>

@@ -355,6 +355,15 @@ public class TimesheetsController : ControllerBase
                 ["relatedId"] = timesheetId,
                 ["isRead"] = false,
             });
+
+            // TODO: Send rejection email to the employee
+            // var employee = await _employeeRepo.FindById(GetStr(existing, "employeeId") ?? "");
+            // EmailService.Send(
+            //     to: GetStr(employee, "email"),
+            //     subject: "Timesheet Rejected",
+            //     body: $"Hi {GetStr(employee, "name")}, your timesheet for the week of {GetStr(existing, "weekStartDate")} was rejected.\nReason: {body.Comment}\nPlease log in to review and re-submit."
+            // );
+
             return Ok(ts);
         }
         catch (InvalidTransitionException e) { return Conflict(new { error = e.Message }); }
