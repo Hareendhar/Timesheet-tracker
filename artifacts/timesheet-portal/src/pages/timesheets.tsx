@@ -47,14 +47,9 @@ export default function Timesheets() {
           <p className="text-muted-foreground mt-1">Manage and submit your weekly timesheets.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          <Link href="/timesheets/new-time">
+          <Link href="/timesheets/new">
             <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" /> New Timesheet
-            </Button>
-          </Link>
-          <Link href="/timesheets/new">
-            <Button variant="outline" className="w-full sm:w-auto">
-              <Plus className="mr-2 h-4 w-4" /> New (Hours)
             </Button>
           </Link>
         </div>
