@@ -78,15 +78,19 @@ public class ProjectRepository : IProjectRepository
         var now = DateTime.UtcNow;
         var status = GetValidEnum(data, "status", new[] { "Active", "Inactive" }, "Active");
         var id = IdGenerator.NewId();
+        var clientManagerName = Get(data, "clientManagerName");
+        var clientManagerEmail = Get(data, "clientManagerEmail");
 
         await using var conn = new NpgsqlConnection(_cs);
         await conn.OpenAsync();
         await using var cmd = new NpgsqlCommand(
-            "INSERT INTO projects (id, project_code, name, client_id, status, created_at, updated_at) VALUES ($1, $2, $3, $4, $5::project_status, $6, $7)", conn);
+            "INSERT INTO projects (id, project_code, name, client_id, client_manager_name, client_manager_email, status, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7::project_status, $8, $9)", conn);
         cmd.Parameters.AddWithValue(id);
         cmd.Parameters.AddWithValue(Get(data, "projectCode"));
         cmd.Parameters.AddWithValue(Get(data, "name"));
         cmd.Parameters.AddWithValue(Get(data, "clientId"));
+        cmd.Parameters.AddWithValue(string.IsNullOrEmpty(clientManagerName) ? DBNull.Value : clientManagerName);
+        cmd.Parameters.AddWithValue(string.IsNullOrEmpty(clientManagerEmail) ? DBNull.Value : clientManagerEmail);
         cmd.Parameters.AddWithValue(status);
         cmd.Parameters.AddWithValue(now);
         cmd.Parameters.AddWithValue(now);
@@ -102,6 +106,8 @@ public class ProjectRepository : IProjectRepository
         if (data.TryGetValue("projectCode", out var pc) && pc != null) p.ProjectCode = pc.ToString()!;
         if (data.TryGetValue("name", out var n) && n != null) p.Name = n.ToString()!;
         if (data.TryGetValue("clientId", out var ci) && ci != null) p.ClientId = ci.ToString()!;
+        if (data.TryGetValue("clientManagerName", out var cmn)) p.ClientManagerName = cmn?.ToString();
+        if (data.TryGetValue("clientManagerEmail", out var cme)) p.ClientManagerEmail = cme?.ToString();
         if (data.TryGetValue("status", out var s) && s != null)
             p.Status = GetValidEnum(data, "status", new[] { "Active", "Inactive" }, p.Status);
         p.UpdatedAt = DateTime.UtcNow;
@@ -109,10 +115,12 @@ public class ProjectRepository : IProjectRepository
         await using var conn = new NpgsqlConnection(_cs);
         await conn.OpenAsync();
         await using var cmd = new NpgsqlCommand(
-            "UPDATE projects SET project_code=$1, name=$2, client_id=$3, status=$4::project_status, updated_at=$5 WHERE id=$6", conn);
+            "UPDATE projects SET project_code=$1, name=$2, client_id=$3, client_manager_name=$4, client_manager_email=$5, status=$6::project_status, updated_at=$7 WHERE id=$8", conn);
         cmd.Parameters.AddWithValue(p.ProjectCode);
         cmd.Parameters.AddWithValue(p.Name);
         cmd.Parameters.AddWithValue(p.ClientId);
+        cmd.Parameters.AddWithValue((object?)p.ClientManagerName ?? DBNull.Value);
+        cmd.Parameters.AddWithValue((object?)p.ClientManagerEmail ?? DBNull.Value);
         cmd.Parameters.AddWithValue(p.Status);
         cmd.Parameters.AddWithValue(p.UpdatedAt);
         cmd.Parameters.AddWithValue(id);
@@ -146,6 +154,8 @@ public class ProjectRepository : IProjectRepository
         name = r.GetString(r.GetOrdinal("name")),
         clientId = r.GetString(r.GetOrdinal("client_id")),
         clientName = r.IsDBNull(r.GetOrdinal("client_name")) ? null : r.GetString(r.GetOrdinal("client_name")),
+        clientManagerName = r.IsDBNull(r.GetOrdinal("client_manager_name")) ? null : r.GetString(r.GetOrdinal("client_manager_name")),
+        clientManagerEmail = r.IsDBNull(r.GetOrdinal("client_manager_email")) ? null : r.GetString(r.GetOrdinal("client_manager_email")),
         status = r.GetString(r.GetOrdinal("status")),
         createdAt = r.GetDateTime(r.GetOrdinal("created_at")),
         updatedAt = r.GetDateTime(r.GetOrdinal("updated_at")),
@@ -158,6 +168,8 @@ public class ProjectRepository : IProjectRepository
         name = p.Name,
         clientId = p.ClientId,
         clientName,
+        clientManagerName = p.ClientManagerName,
+        clientManagerEmail = p.ClientManagerEmail,
         status = p.Status,
         createdAt = p.CreatedAt,
         updatedAt = p.UpdatedAt,

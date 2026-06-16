@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useListProjects, useCreateProject, useUpdateProject, useListClients } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Edit } from "lucide-react";
+import { Plus, Search, Edit, Mail, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +19,15 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-type ProjectRow = { id: string; projectCode: string; name: string; clientId: string; status: string };
+type ProjectRow = {
+  id: string;
+  projectCode: string;
+  name: string;
+  clientId: string;
+  clientManagerName?: string | null;
+  clientManagerEmail?: string | null;
+  status: string;
+};
 
 export default function Projects() {
   const { toast } = useToast();
@@ -31,15 +39,25 @@ export default function Projects() {
   const updateProject = useUpdateProject();
 
   const [dialog, setDialog] = useState<{ open: boolean; editing: ProjectRow | null }>({ open: false, editing: null });
-  const [form, setForm] = useState({ projectCode: "", name: "", clientId: "", status: "Active" });
+  const [form, setForm] = useState({
+    projectCode: "", name: "", clientId: "", status: "Active",
+    clientManagerName: "", clientManagerEmail: "",
+  });
 
   const openCreate = () => {
-    setForm({ projectCode: "", name: "", clientId: "", status: "Active" });
+    setForm({ projectCode: "", name: "", clientId: "", status: "Active", clientManagerName: "", clientManagerEmail: "" });
     setDialog({ open: true, editing: null });
   };
 
   const openEdit = (p: ProjectRow) => {
-    setForm({ projectCode: p.projectCode, name: p.name, clientId: p.clientId, status: p.status });
+    setForm({
+      projectCode: p.projectCode,
+      name: p.name,
+      clientId: p.clientId,
+      status: p.status,
+      clientManagerName: p.clientManagerName ?? "",
+      clientManagerEmail: p.clientManagerEmail ?? "",
+    });
     setDialog({ open: true, editing: p });
   };
 
@@ -98,16 +116,35 @@ export default function Projects() {
                     <TableHead>Project Code</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Client</TableHead>
+                    <TableHead>Client Manager</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((project) => (
+                  {filtered.map((project: any) => (
                     <TableRow key={project.id}>
                       <TableCell className="font-mono text-sm">{project.projectCode}</TableCell>
                       <TableCell className="font-medium">{project.name}</TableCell>
                       <TableCell>{project.clientName}</TableCell>
+                      <TableCell>
+                        {project.clientManagerName ? (
+                          <div>
+                            <div className="flex items-center gap-1 text-sm">
+                              <User className="h-3 w-3 text-muted-foreground shrink-0" />
+                              {project.clientManagerName}
+                            </div>
+                            {project.clientManagerEmail && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                                <Mail className="h-3 w-3 shrink-0" />
+                                {project.clientManagerEmail}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">Not set</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {project.status === "Active"
                           ? <Badge className="bg-green-500/15 text-green-700 hover:bg-green-500/25 border-green-200">Active</Badge>
@@ -115,7 +152,15 @@ export default function Projects() {
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon"
-                          onClick={() => openEdit({ id: project.id, projectCode: project.projectCode, name: project.name, clientId: project.clientId ?? "", status: project.status })}>
+                          onClick={() => openEdit({
+                            id: project.id,
+                            projectCode: project.projectCode,
+                            name: project.name,
+                            clientId: project.clientId ?? "",
+                            clientManagerName: project.clientManagerName,
+                            clientManagerEmail: project.clientManagerEmail,
+                            status: project.status,
+                          })}>
                           <Edit className="h-4 w-4 text-muted-foreground" />
                         </Button>
                       </TableCell>
@@ -131,14 +176,26 @@ export default function Projects() {
       </Card>
 
       <Dialog open={dialog.open} onOpenChange={(open) => { if (!open) setDialog({ open: false, editing: null }); }}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{dialog.editing ? "Edit Project" : "Add Project"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label>Project Code</Label>
-              <Input placeholder="e.g. PRJ001" value={form.projectCode} onChange={(e) => setForm({ ...form, projectCode: e.target.value })} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Project Code</Label>
+                <Input placeholder="e.g. PRJ001" value={form.projectCode} onChange={(e) => setForm({ ...form, projectCode: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Name</Label>
@@ -155,15 +212,29 @@ export default function Projects() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label>Status</Label>
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="border-t border-border/50 pt-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                Client Manager (receives timesheet emails)
+              </p>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Name</Label>
+                  <Input
+                    placeholder="Client manager's full name"
+                    value={form.clientManagerName}
+                    onChange={(e) => setForm({ ...form, clientManagerName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    placeholder="manager@client.com"
+                    value={form.clientManagerEmail}
+                    onChange={(e) => setForm({ ...form, clientManagerEmail: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>

@@ -19,6 +19,7 @@ import Projects from "@/pages/projects";
 import Activities from "@/pages/activities";
 import Notifications from "@/pages/notifications";
 import AuditLogs from "@/pages/audit-logs";
+import ClientSubmissions from "@/pages/client-submissions";
 import Settings from "@/pages/settings";
 
 const queryClient = new QueryClient({
@@ -92,6 +93,11 @@ function Router() {
             <Route path="/audit-logs">
               <RequireRole roles={["Admin", "HR"]}>
                 <AuditLogs />
+              </RequireRole>
+            </Route>
+            <Route path="/client-submissions">
+              <RequireRole roles={["HR"]}>
+                <ClientSubmissions />
               </RequireRole>
             </Route>
             <Route path="/notifications" component={Notifications} />

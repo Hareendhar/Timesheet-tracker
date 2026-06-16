@@ -9,6 +9,8 @@ export const projectsTable = pgTable("projects", {
   projectCode: text("project_code").notNull().unique(),
   name: text("name").notNull(),
   clientId: text("client_id").notNull(),
+  clientManagerName: text("client_manager_name"),
+  clientManagerEmail: text("client_manager_email"),
   status: projectStatusEnum("status").notNull().default("Active"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

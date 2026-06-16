@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   LayoutDashboard, Clock, ClipboardCheck, Users, Building2, Briefcase,
   Activity, Bell, Search, Settings, LogOut, FileText, X, ChevronRight,
-  ChevronDown, Database,
+  ChevronDown, Database, Send,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -117,6 +117,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     { icon: LayoutDashboard, label: "Dashboard", href: "/", color: "text-[#29ABE2]" },
     { icon: Clock, label: "My Timesheets", href: "/timesheets", color: "text-violet-400" },
     ...(isManager ? [{ icon: ClipboardCheck, label: "Approvals", href: "/approvals", color: "text-amber-400" }] : []),
+    ...(isHR ? [{ icon: Send, label: "Client Submissions", href: "/client-submissions", color: "text-teal-400" }] : []),
   ];
 
   const bottomNavItems = [

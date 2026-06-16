@@ -31,6 +31,8 @@ public class Project
     public string ProjectCode { get; set; } = "";
     public string Name { get; set; } = "";
     public string ClientId { get; set; } = "";
+    public string? ClientManagerName { get; set; }
+    public string? ClientManagerEmail { get; set; }
     public string Status { get; set; } = "Active";
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -56,6 +58,8 @@ public class Timesheet
     public DateTime? ApprovedAt { get; set; }
     public string? ApprovedBy { get; set; }
     public string? RejectionComment { get; set; }
+    public DateTime? ClientSubmittedAt { get; set; }
+    public string? ClientSubmittedBy { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

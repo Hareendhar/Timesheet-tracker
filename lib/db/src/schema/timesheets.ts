@@ -2,7 +2,7 @@ import { pgTable, text, timestamp, real, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const timesheetStatusEnum = pgEnum("timesheet_status", ["Draft", "Submitted", "Approved", "Rejected"]);
+export const timesheetStatusEnum = pgEnum("timesheet_status", ["Draft", "Submitted", "Approved", "Rejected", "ClientSubmitted"]);
 
 export const timesheetsTable = pgTable("timesheets", {
   id: text("id").primaryKey(),
@@ -15,6 +15,8 @@ export const timesheetsTable = pgTable("timesheets", {
   approvedAt: timestamp("approved_at"),
   approvedBy: text("approved_by"),
   rejectionComment: text("rejection_comment"),
+  clientSubmittedAt: timestamp("client_submitted_at"),
+  clientSubmittedBy: text("client_submitted_by"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
