@@ -73,7 +73,7 @@ export default function ClientSubmissions() {
   const PAGE_SIZE = 25;
 
   const managerEmployees = (managers?.data ?? []).filter(
-    (e: any) => e.role === "Manager" || e.role === "Admin"
+    (e: any) => e.role === "Manager" || e.role === "HR"
   );
 
   const fetchData = useCallback(async (f: typeof filters, p: number) => {

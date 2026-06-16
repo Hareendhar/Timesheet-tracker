@@ -27,7 +27,7 @@ public class ActivitiesController : ControllerBase
     }
 
     [HttpPost("activities")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> CreateActivity([FromBody] Dictionary<string, object?> body)
     {
         try
@@ -47,7 +47,7 @@ public class ActivitiesController : ControllerBase
     }
 
     [HttpPatch("activities/{activityId}")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> UpdateActivity(string activityId, [FromBody] Dictionary<string, object?> body)
     {
         try
@@ -69,7 +69,7 @@ public class ActivitiesController : ControllerBase
     }
 
     [HttpDelete("activities/{activityId}")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> DeleteActivity(string activityId)
     {
         try

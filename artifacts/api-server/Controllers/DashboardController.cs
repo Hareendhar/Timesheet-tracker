@@ -26,7 +26,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("stats")]
-    [RequireRole("Admin", "Manager", "HR")]
+    [RequireRole("Manager", "HR")]
     public async Task<IActionResult> GetStats()
     {
         try
@@ -42,7 +42,7 @@ public class DashboardController : ControllerBase
 
             await using (var cmd = new NpgsqlCommand(
                 "SELECT COUNT(*) as total, COUNT(CASE WHEN role::text = 'Manager' THEN 1 END) as managers, " +
-                "COUNT(CASE WHEN role::text = 'Admin' THEN 1 END) as admins FROM employees WHERE status::text = 'Active'", conn))
+                "COUNT(CASE WHEN role::text = 'HR' THEN 1 END) as admins FROM employees WHERE status::text = 'Active'", conn))
             await using (var reader = await cmd.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -82,7 +82,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("timesheet-status-breakdown")]
-    [RequireRole("Admin", "Manager", "HR")]
+    [RequireRole("Manager", "HR")]
     public async Task<IActionResult> GetStatusBreakdown()
     {
         try { return Ok(await _timesheetRepo.GetStatusBreakdown()); }
@@ -90,7 +90,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("recent-activity")]
-    [RequireRole("Admin", "Manager", "HR")]
+    [RequireRole("Manager", "HR")]
     public async Task<IActionResult> GetRecentActivity([FromQuery] int limit = 10)
     {
         try { return Ok(await _timesheetRepo.GetRecentActivity(limit)); }
@@ -98,7 +98,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("compliance-overview")]
-    [RequireRole("Admin", "Manager", "HR")]
+    [RequireRole("Manager", "HR")]
     public async Task<IActionResult> GetComplianceOverview()
     {
         try { return Ok(await _timesheetRepo.GetComplianceOverview()); }

@@ -108,7 +108,7 @@ public class EmployeeRepository : IEmployeeRepository
             Email = Get(data, "email"),
             Department = Get(data, "department"),
             Designation = Get(data, "designation"),
-            Role = GetValidEnum(data, "role", new[] { "Employee", "Manager", "Admin", "HR" }, "Employee"),
+            Role = GetValidEnum(data, "role", new[] { "Employee", "Manager", "HR" }, "Employee"),
             ManagerId = data.TryGetValue("managerId", out var mgr) ? mgr?.ToString() : null,
             Status = GetValidEnum(data, "status", new[] { "Active", "Inactive" }, "Active"),
             CreatedAt = now,
@@ -146,7 +146,7 @@ public class EmployeeRepository : IEmployeeRepository
         if (data.TryGetValue("department", out var dep) && dep != null) e.Department = dep.ToString()!;
         if (data.TryGetValue("designation", out var des) && des != null) e.Designation = des.ToString()!;
         if (data.TryGetValue("role", out var r) && r != null)
-            e.Role = GetValidEnum(data, "role", new[] { "Employee", "Manager", "Admin", "HR" }, e.Role);
+            e.Role = GetValidEnum(data, "role", new[] { "Employee", "Manager", "HR" }, e.Role);
         if (data.TryGetValue("status", out var s) && s != null)
             e.Status = GetValidEnum(data, "status", new[] { "Active", "Inactive" }, e.Status);
         if (data.ContainsKey("managerId")) e.ManagerId = data["managerId"]?.ToString();
@@ -203,7 +203,7 @@ public class EmployeeRepository : IEmployeeRepository
                 if (string.IsNullOrEmpty(empId)) throw new Exception("Missing Employee ID");
                 if (string.IsNullOrEmpty(name)) throw new Exception("Missing Name");
                 if (string.IsNullOrEmpty(email)) throw new Exception("Missing Email");
-                if (!new[] { "Employee", "Manager", "Admin", "HR" }.Contains(role)) throw new Exception($"Invalid role: {role}");
+                if (!new[] { "Employee", "Manager", "HR" }.Contains(role)) throw new Exception($"Invalid role: {role}");
                 if (!new[] { "Active", "Inactive" }.Contains(status)) throw new Exception($"Invalid status: {status}");
 
                 var existing = await _db.Employees.FirstOrDefaultAsync(e => e.EmployeeId == empId);

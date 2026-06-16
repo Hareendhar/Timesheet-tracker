@@ -95,22 +95,19 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   if (!user) return null;
 
-  const isAdmin = user.role === "Admin";
   const isHR = user.role === "HR";
-  const isManager = user.role === "Manager" || isAdmin;
-  const canSeeMasters = isAdmin || isHR;
+  const isManager = user.role === "Manager" || isHR;
+  const canSeeMasters = isHR;
 
   const mastersInPath = ["/employees", "/clients", "/projects", "/activities"].some(
     p => location === p || location.startsWith(p + "/")
   );
 
   const mastersItems = [
-    { icon: Users, label: "Employees", href: "/employees", color: "text-emerald-400", adminOnly: false },
-    ...(isAdmin ? [
-      { icon: Building2, label: "Clients", href: "/clients", color: "text-sky-400", adminOnly: true },
-      { icon: Briefcase, label: "Projects", href: "/projects", color: "text-orange-400", adminOnly: true },
-      { icon: Activity, label: "Activities", href: "/activities", color: "text-pink-400", adminOnly: true },
-    ] : []),
+    { icon: Users, label: "Employees", href: "/employees", color: "text-emerald-400" },
+    { icon: Building2, label: "Clients", href: "/clients", color: "text-sky-400" },
+    { icon: Briefcase, label: "Projects", href: "/projects", color: "text-orange-400" },
+    { icon: Activity, label: "Activities", href: "/activities", color: "text-pink-400" },
   ];
 
   const topNavItems = [
@@ -121,7 +118,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   ];
 
   const bottomNavItems = [
-    ...((isAdmin || isHR) ? [{ icon: FileText, label: "Audit Logs", href: "/audit-logs", color: "text-slate-300" }] : []),
+    ...(isHR ? [{ icon: FileText, label: "Audit Logs", href: "/audit-logs", color: "text-slate-300" }] : []),
   ];
 
   const SidebarNav = () => {
@@ -319,7 +316,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                             <button
                               key={emp.id}
                               className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg hover:bg-muted/60 text-left text-sm transition-colors"
-                              onClick={() => handleSearchNav((isAdmin || isHR) ? `/employees/${emp.id}` : "/timesheets")}
+                              onClick={() => handleSearchNav(isHR ? `/employees/${emp.id}` : "/timesheets")}
                             >
                               <Avatar className="h-6 w-6 shrink-0">
                                 <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">{emp.name?.charAt(0)}</AvatarFallback>

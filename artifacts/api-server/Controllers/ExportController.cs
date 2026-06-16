@@ -29,7 +29,7 @@ public class ExportController : ControllerBase
     }
 
     [HttpGet("employees")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> ExportEmployees([FromQuery] string format = "csv")
     {
         try
@@ -42,7 +42,7 @@ public class ExportController : ControllerBase
     }
 
     [HttpGet("timesheets")]
-    [RequireRole("Admin", "Manager")]
+    [RequireRole("HR", "Manager")]
     public async Task<IActionResult> ExportTimesheets([FromQuery] string format = "csv")
     {
         try
@@ -73,7 +73,7 @@ public class ExportController : ControllerBase
     }
 
     [HttpGet("clients")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> ExportClients([FromQuery] string format = "csv")
     {
         try
@@ -86,7 +86,7 @@ public class ExportController : ControllerBase
     }
 
     [HttpGet("projects")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> ExportProjects([FromQuery] string format = "csv")
     {
         try
@@ -99,7 +99,7 @@ public class ExportController : ControllerBase
     }
 
     [HttpGet("audit-logs")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> ExportAuditLogs(
         [FromQuery] string format = "csv",
         [FromQuery] string? dateFrom = null,

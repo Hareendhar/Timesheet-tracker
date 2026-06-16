@@ -31,7 +31,7 @@ export type EmployeeRole = typeof EmployeeRole[keyof typeof EmployeeRole];
 export const EmployeeRole = {
   Employee: 'Employee',
   Manager: 'Manager',
-  Admin: 'Admin',
+  HR: 'HR',
 } as const;
 
 export type EmployeeStatus = typeof EmployeeStatus[keyof typeof EmployeeStatus];
@@ -65,7 +65,7 @@ export type EmployeeInputRole = typeof EmployeeInputRole[keyof typeof EmployeeIn
 export const EmployeeInputRole = {
   Employee: 'Employee',
   Manager: 'Manager',
-  Admin: 'Admin',
+  HR: 'HR',
 } as const;
 
 export type EmployeeInputStatus = typeof EmployeeInputStatus[keyof typeof EmployeeInputStatus];
@@ -94,7 +94,7 @@ export type EmployeeUpdateRole = typeof EmployeeUpdateRole[keyof typeof Employee
 export const EmployeeUpdateRole = {
   Employee: 'Employee',
   Manager: 'Manager',
-  Admin: 'Admin',
+  HR: 'HR',
 } as const;
 
 export type EmployeeUpdateStatus = typeof EmployeeUpdateStatus[keyof typeof EmployeeUpdateStatus];

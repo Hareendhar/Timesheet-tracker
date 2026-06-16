@@ -38,7 +38,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPost("employees")]
-    [RequireRole("Admin", "HR")]
+    [RequireRole("HR")]
     public async Task<IActionResult> CreateEmployee([FromBody] Dictionary<string, object?> body)
     {
         try
@@ -61,7 +61,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet("employees/bulk-upload-template")]
-    [RequireRole("Admin", "HR")]
+    [RequireRole("HR")]
     public IActionResult GetBulkUploadTemplate()
     {
         try
@@ -92,7 +92,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPost("employees/bulk-upload")]
-    [RequireRole("Admin", "HR")]
+    [RequireRole("HR")]
     public async Task<IActionResult> BulkUpload(IFormFile file)
     {
         try
@@ -165,7 +165,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet("employees/{employeeId}/direct-reports")]
-    [RequireRole("Manager", "Admin", "HR")]
+    [RequireRole("Manager", "HR")]
     public async Task<IActionResult> GetDirectReports(string employeeId)
     {
         try
@@ -195,7 +195,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPatch("employees/{employeeId}")]
-    [RequireRole("Admin", "HR")]
+    [RequireRole("HR")]
     public async Task<IActionResult> UpdateEmployee(string employeeId, [FromBody] Dictionary<string, object?> body)
     {
         try
@@ -211,7 +211,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpDelete("employees/{employeeId}")]
-    [RequireRole("Admin", "HR")]
+    [RequireRole("HR")]
     public async Task<IActionResult> DeleteEmployee(string employeeId)
     {
         try

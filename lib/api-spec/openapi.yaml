@@ -1029,7 +1029,7 @@ components:
           type: string
         role:
           type: string
-          enum: [Employee, Manager, Admin]
+          enum: [Employee, Manager, HR]
         managerId:
           type: ["string", "null"]
         managerName:
@@ -1058,7 +1058,7 @@ components:
           type: string
         role:
           type: string
-          enum: [Employee, Manager, Admin]
+          enum: [Employee, Manager, HR]
         managerId:
           type: ["string", "null"]
         status:
@@ -1077,7 +1077,7 @@ components:
           type: string
         role:
           type: string
-          enum: [Employee, Manager, Admin]
+          enum: [Employee, Manager, HR]
         managerId:
           type: ["string", "null"]
         status:

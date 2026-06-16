@@ -28,7 +28,7 @@ public class TimesheetsController : ControllerBase
     }
 
     [HttpPost("timesheets/bulk-action")]
-    [RequireRole("Manager", "Admin")]
+    [RequireRole("Manager", "HR")]
     public async Task<IActionResult> BulkAction([FromBody] BulkActionRequest body)
     {
         try
@@ -215,7 +215,7 @@ public class TimesheetsController : ControllerBase
             var user = HttpContext.Session.GetUser()!;
             var existing = await _timesheetRepo.FindById(timesheetId);
             if (existing == null) return NotFound(new { error = "Not found" });
-            if (user.Role != "Admin" && GetStr(existing, "employeeId") != user.Id)
+            if (user.Role != "HR" && GetStr(existing, "employeeId") != user.Id)
                 return StatusCode(403, new { error = "Forbidden" });
 
             var ts = await _timesheetRepo.Update(timesheetId, body.Rows ?? new List<Dictionary<string, object?>>());
@@ -275,7 +275,7 @@ public class TimesheetsController : ControllerBase
     }
 
     [HttpPost("timesheets/{timesheetId}/approve")]
-    [RequireRole("Manager", "Admin")]
+    [RequireRole("Manager", "HR")]
     public async Task<IActionResult> Approve(string timesheetId, [FromBody] ApproveRejectRequest? body = null)
     {
         try
@@ -317,7 +317,7 @@ public class TimesheetsController : ControllerBase
     }
 
     [HttpPost("timesheets/{timesheetId}/reject")]
-    [RequireRole("Manager", "Admin")]
+    [RequireRole("Manager", "HR")]
     public async Task<IActionResult> Reject(string timesheetId, [FromBody] ApproveRejectRequest body)
     {
         try

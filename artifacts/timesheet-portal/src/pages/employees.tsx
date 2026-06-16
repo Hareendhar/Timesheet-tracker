@@ -260,7 +260,7 @@ export default function Employees() {
                 <SelectContent>
                   <SelectItem value="Employee">Employee</SelectItem>
                   <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="Admin">Admin</SelectItem>
+                  <SelectItem value="HR">HR</SelectItem>
                 </SelectContent>
               </Select>
             </div>

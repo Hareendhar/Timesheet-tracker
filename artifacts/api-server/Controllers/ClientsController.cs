@@ -35,7 +35,7 @@ public class ClientsController : ControllerBase
     }
 
     [HttpPost("clients")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> CreateClient([FromBody] Dictionary<string, object?> body)
     {
         try
@@ -65,7 +65,7 @@ public class ClientsController : ControllerBase
     }
 
     [HttpPatch("clients/{clientId}")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> UpdateClient(string clientId, [FromBody] Dictionary<string, object?> body)
     {
         try
@@ -81,7 +81,7 @@ public class ClientsController : ControllerBase
     }
 
     [HttpDelete("clients/{clientId}")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> DeleteClient(string clientId)
     {
         try

@@ -8,13 +8,13 @@ type EmployeeOption = {
   employeeId: string;
   name: string;
   email: string;
-  role: "Admin" | "Manager" | "Employee";
+  role: "HR" | "Manager" | "Employee";
   department: string;
   designation: string;
 };
 
 const roleBadge: Record<string, string> = {
-  Admin: "bg-[#1F2B5B] text-white",
+  HR: "bg-[#1F2B5B] text-white",
   Manager: "bg-[#1C75BC] text-white",
   Employee: "bg-[#29ABE2]/20 text-[#1C75BC]",
 };
@@ -41,7 +41,7 @@ export function Login() {
       .then((r) => r.json())
       .then((data) => {
         const sorted = (data as EmployeeOption[]).sort((a, b) => {
-          const order: Record<string, number> = { Admin: 0, Manager: 1, Employee: 2 };
+          const order: Record<string, number> = { HR: 0, Manager: 1, Employee: 2 };
           return (order[a.role] ?? 3) - (order[b.role] ?? 3);
         });
         setEmployees(sorted);

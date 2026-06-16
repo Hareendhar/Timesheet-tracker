@@ -40,7 +40,6 @@ function RequireRole({ roles, children }: { roles: string[]; children: React.Rea
   return <>{children}</>;
 }
 
-// Redirects the current user to their own profile page
 function SelfProfileRedirect() {
   const { data: user, isLoading } = useGetCurrentUser({
     query: { retry: false, queryKey: getGetCurrentUserQueryKey() },
@@ -62,36 +61,34 @@ function Router() {
             <Route path="/timesheets/new" component={TimesheetNew} />
             <Route path="/timesheets/:id" component={TimesheetDetail} />
             <Route path="/approvals">
-              <RequireRole roles={["Manager", "Admin"]}>
+              <RequireRole roles={["Manager", "HR"]}>
                 <Approvals />
               </RequireRole>
             </Route>
             <Route path="/employees">
-              <RequireRole roles={["Admin", "HR"]}>
+              <RequireRole roles={["HR"]}>
                 <Employees />
               </RequireRole>
             </Route>
-            {/* /profile — self-service shortcut for any role */}
             <Route path="/profile" component={SelfProfileRedirect} />
-            {/* /employees/:id — Admin sees all; backend IDOR check handles Employee/Manager scoping */}
             <Route path="/employees/:id" component={EmployeeProfile} />
             <Route path="/clients">
-              <RequireRole roles={["Admin"]}>
+              <RequireRole roles={["HR"]}>
                 <Clients />
               </RequireRole>
             </Route>
             <Route path="/projects">
-              <RequireRole roles={["Admin"]}>
+              <RequireRole roles={["HR"]}>
                 <Projects />
               </RequireRole>
             </Route>
             <Route path="/activities">
-              <RequireRole roles={["Admin"]}>
+              <RequireRole roles={["HR"]}>
                 <Activities />
               </RequireRole>
             </Route>
             <Route path="/audit-logs">
-              <RequireRole roles={["Admin", "HR"]}>
+              <RequireRole roles={["HR"]}>
                 <AuditLogs />
               </RequireRole>
             </Route>

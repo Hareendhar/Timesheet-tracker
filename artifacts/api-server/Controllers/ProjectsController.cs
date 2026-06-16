@@ -36,7 +36,7 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpPost("projects")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> CreateProject([FromBody] Dictionary<string, object?> body)
     {
         try
@@ -70,7 +70,7 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpPatch("projects/{projectId}")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> UpdateProject(string projectId, [FromBody] Dictionary<string, object?> body)
     {
         try
@@ -86,7 +86,7 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpDelete("projects/{projectId}")]
-    [RequireRole("Admin")]
+    [RequireRole("HR")]
     public async Task<IActionResult> DeleteProject(string projectId)
     {
         try
