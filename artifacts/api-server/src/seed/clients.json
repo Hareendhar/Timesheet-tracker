@@ -1,0 +1,18 @@
+[
+  {
+    "id": "c-1",
+    "clientCode": "CL-WSA",
+    "name": "WSA",
+    "status": "Active",
+    "createdAt": "2025-01-10T09:00:00.000Z",
+    "updatedAt": "2025-01-10T09:00:00.000Z"
+  },
+  {
+    "id": "c-2",
+    "clientCode": "CL-SS",
+    "name": "Shipping Saint",
+    "status": "Active",
+    "createdAt": "2025-01-10T09:00:00.000Z",
+    "updatedAt": "2025-01-10T09:00:00.000Z"
+  }
+]

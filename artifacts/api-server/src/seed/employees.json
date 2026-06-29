@@ -1,0 +1,67 @@
+[
+  {
+    "id": "e-emp-1",
+    "employeeId": "EMP001",
+    "name": "Hareendhar",
+    "email": "hareendhar.a@versatileitsol.com",
+    "department": "Product",
+    "designation": "Product Owner",
+    "role": "Employee",
+    "managerId": "e-mgr-1",
+    "status": "Active",
+    "createdAt": "2025-01-06T09:00:00.000Z",
+    "updatedAt": "2025-01-06T09:00:00.000Z"
+  },
+  {
+    "id": "e-mgr-1",
+    "employeeId": "EMP002",
+    "name": "Bala",
+    "email": "choudary.r@versatileitsol.com",
+    "department": "Management",
+    "designation": "Project Manager",
+    "role": "Manager",
+    "managerId": null,
+    "status": "Active",
+    "createdAt": "2025-01-06T09:00:00.000Z",
+    "updatedAt": "2025-01-06T09:00:00.000Z"
+  },
+  {
+    "id": "e-mgr-2",
+    "employeeId": "EMP003",
+    "name": "Raghavender",
+    "email": "raghavender.y@versatileitsol.com",
+    "department": "Engineering",
+    "designation": "Software Architect",
+    "role": "Manager",
+    "managerId": "e-mgr-1",
+    "status": "Active",
+    "createdAt": "2025-01-07T09:00:00.000Z",
+    "updatedAt": "2025-01-07T09:00:00.000Z"
+  },
+      {
+    "id": "e-mgr-3",
+    "employeeId": "EMP005",
+    "name": "Sathish Kumar Reddy",
+    "email": "satishkumar.m@versatileitsol.com",
+    "department": "QA",
+    "designation": "QA Manager",
+    "role": "Manager",
+    "managerId": "e-mgr-1",
+    "status": "Active",
+    "createdAt": "2025-01-07T09:00:00.000Z",
+    "updatedAt": "2025-01-07T09:00:00.000Z"
+  },
+    {
+    "id": "e-hr-1",
+    "employeeId": "EMP004",
+    "name": "Kiranmayi",
+    "email": "kp@example.com",
+    "department": "HR",
+    "designation": "HR Manager",
+    "role": "HR",
+    "managerId": "e-hr-1",
+    "status": "Active",
+    "createdAt": "2025-01-07T09:00:00.000Z",
+    "updatedAt": "2025-01-07T09:00:00.000Z"
+  }
+]

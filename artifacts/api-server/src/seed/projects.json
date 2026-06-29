@@ -1,0 +1,24 @@
+[
+  {
+    "id": "p-1",
+    "projectCode": "PRJ-001",
+    "name": "OTC Apps",
+    "clientId": "c-1",
+    "clientManagerName": "Kiran",
+    "clientManagerEmail": "k@example.com",
+    "status": "Active",
+    "createdAt": "2025-01-12T09:00:00.000Z",
+    "updatedAt": "2025-01-12T09:00:00.000Z"
+  },
+  {
+    "id": "p-2",
+    "projectCode": "PRJ-002",
+    "name": "Henosis",
+    "clientId": "c-2",
+    "clientManagerName": "Mounika",
+    "clientManagerEmail": "m@example.com",
+    "status": "Active",
+    "createdAt": "2025-01-12T09:00:00.000Z",
+    "updatedAt": "2025-01-12T09:00:00.000Z"
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "models": [
+    {
+      "title": "Devstral",
+      "provider": "ollama",
+      "model": "devstral:latest"
+    }
+  ]
+}

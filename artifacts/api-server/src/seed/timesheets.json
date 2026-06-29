@@ -1,0 +1,50 @@
+[
+  {
+    "id": "ts-1",
+    "employeeId": "e-emp-1",
+    "weekStartDate": "2026-06-22",
+    "weekEndDate": "2026-06-28",
+    "status": "Draft",
+    "totalHours": 8,
+    "submittedAt": null,
+    "approvedAt": null,
+    "approvedBy": null,
+    "rejectionComment": null,
+    "clientSubmittedAt": null,
+    "clientSubmittedBy": null,
+    "createdAt": "2026-06-22T09:00:00.000Z",
+    "updatedAt": "2026-06-22T09:00:00.000Z"
+  },
+  {
+    "id": "ts-2",
+    "employeeId": "e-emp-1",
+    "weekStartDate": "2026-06-15",
+    "weekEndDate": "2026-06-21",
+    "status": "Submitted",
+    "totalHours": 40,
+    "submittedAt": "2026-06-21T10:00:00.000Z",
+    "approvedAt": null,
+    "approvedBy": null,
+    "rejectionComment": null,
+    "clientSubmittedAt": null,
+    "clientSubmittedBy": null,
+    "createdAt": "2026-06-15T09:00:00.000Z",
+    "updatedAt": "2026-06-21T10:00:00.000Z"
+  },
+  {
+    "id": "ts-3",
+    "employeeId": "e-emp-1",
+    "weekStartDate": "2026-06-08",
+    "weekEndDate": "2026-06-14",
+    "status": "Approved",
+    "totalHours": 40,
+    "submittedAt": "2026-06-14T09:00:00.000Z",
+    "approvedAt": "2026-06-15T11:00:00.000Z",
+    "approvedBy": "e-mgr-1",
+    "rejectionComment": null,
+    "clientSubmittedAt": null,
+    "clientSubmittedBy": null,
+    "createdAt": "2026-06-08T09:00:00.000Z",
+    "updatedAt": "2026-06-15T11:00:00.000Z"
+  }
+]

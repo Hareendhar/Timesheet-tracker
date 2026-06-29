@@ -1,0 +1,28 @@
+[
+  {
+    "id": "audit-1",
+    "userId": "e-emp-1",
+    "userName": "Carla Singh",
+    "role": "Employee",
+    "action": "Timesheet Submitted",
+    "entityType": "Timesheet",
+    "entityId": "ts-2",
+    "oldValue": null,
+    "newValue": null,
+    "ipAddress": "127.0.0.1",
+    "createdAt": "2026-06-21T10:00:00.000Z"
+  },
+  {
+    "id": "audit-2",
+    "userId": "e-mgr-1",
+    "userName": "Bob Martinez",
+    "role": "Manager",
+    "action": "Timesheet Approved",
+    "entityType": "Timesheet",
+    "entityId": "ts-3",
+    "oldValue": null,
+    "newValue": null,
+    "ipAddress": "127.0.0.1",
+    "createdAt": "2026-06-15T11:00:00.000Z"
+  }
+]

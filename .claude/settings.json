@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(cd \"artifacts\\\\api-server\"; $env:PORT = \"8080\"; node src/index.js)"
+    ]
+  }
+}

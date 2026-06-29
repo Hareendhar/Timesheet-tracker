@@ -1,0 +1,72 @@
+[
+  {
+    "id": "tr-1",
+    "timesheetId": "ts-1",
+    "projectId": "p-1",
+    "activityId": "a-1",
+    "monday": 4, "tuesday": 4, "wednesday": 0, "thursday": 0, "friday": 0, "saturday": 0, "sunday": 0,
+    "totalHours": 8,
+    "comments": "Working on homepage layout",
+    "mondayStart": null, "mondayEnd": null, "tuesdayStart": null, "tuesdayEnd": null,
+    "wednesdayStart": null, "wednesdayEnd": null, "thursdayStart": null, "thursdayEnd": null,
+    "fridayStart": null, "fridayEnd": null, "saturdayStart": null, "saturdayEnd": null,
+    "sundayStart": null, "sundayEnd": null,
+    "createdAt": "2026-06-22T09:00:00.000Z"
+  },
+  {
+    "id": "tr-2",
+    "timesheetId": "ts-2",
+    "projectId": "p-1",
+    "activityId": "a-1",
+    "monday": 8, "tuesday": 8, "wednesday": 8, "thursday": 0, "friday": 0, "saturday": 0, "sunday": 0,
+    "totalHours": 24,
+    "comments": "Frontend implementation",
+    "mondayStart": null, "mondayEnd": null, "tuesdayStart": null, "tuesdayEnd": null,
+    "wednesdayStart": null, "wednesdayEnd": null, "thursdayStart": null, "thursdayEnd": null,
+    "fridayStart": null, "fridayEnd": null, "saturdayStart": null, "saturdayEnd": null,
+    "sundayStart": null, "sundayEnd": null,
+    "createdAt": "2026-06-15T09:00:00.000Z"
+  },
+  {
+    "id": "tr-3",
+    "timesheetId": "ts-2",
+    "projectId": "p-2",
+    "activityId": "a-2",
+    "monday": 0, "tuesday": 0, "wednesday": 0, "thursday": 8, "friday": 8, "saturday": 0, "sunday": 0,
+    "totalHours": 16,
+    "comments": "QA pass on mobile app",
+    "mondayStart": null, "mondayEnd": null, "tuesdayStart": null, "tuesdayEnd": null,
+    "wednesdayStart": null, "wednesdayEnd": null, "thursdayStart": null, "thursdayEnd": null,
+    "fridayStart": null, "fridayEnd": null, "saturdayStart": null, "saturdayEnd": null,
+    "sundayStart": null, "sundayEnd": null,
+    "createdAt": "2026-06-15T09:00:00.000Z"
+  },
+  {
+    "id": "tr-4",
+    "timesheetId": "ts-3",
+    "projectId": "p-1",
+    "activityId": "a-3",
+    "monday": 8, "tuesday": 8, "wednesday": 8, "thursday": 8, "friday": 0, "saturday": 0, "sunday": 0,
+    "totalHours": 32,
+    "comments": "Sprint planning and reviews",
+    "mondayStart": null, "mondayEnd": null, "tuesdayStart": null, "tuesdayEnd": null,
+    "wednesdayStart": null, "wednesdayEnd": null, "thursdayStart": null, "thursdayEnd": null,
+    "fridayStart": null, "fridayEnd": null, "saturdayStart": null, "saturdayEnd": null,
+    "sundayStart": null, "sundayEnd": null,
+    "createdAt": "2026-06-08T09:00:00.000Z"
+  },
+  {
+    "id": "tr-5",
+    "timesheetId": "ts-3",
+    "projectId": "p-2",
+    "activityId": "a-1",
+    "monday": 0, "tuesday": 0, "wednesday": 0, "thursday": 0, "friday": 8, "saturday": 0, "sunday": 0,
+    "totalHours": 8,
+    "comments": "Mobile API integration",
+    "mondayStart": null, "mondayEnd": null, "tuesdayStart": null, "tuesdayEnd": null,
+    "wednesdayStart": null, "wednesdayEnd": null, "thursdayStart": null, "thursdayEnd": null,
+    "fridayStart": null, "fridayEnd": null, "saturdayStart": null, "saturdayEnd": null,
+    "sundayStart": null, "sundayEnd": null,
+    "createdAt": "2026-06-08T09:00:00.000Z"
+  }
+]

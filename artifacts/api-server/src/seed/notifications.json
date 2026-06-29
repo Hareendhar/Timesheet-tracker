@@ -1,0 +1,22 @@
+[
+  {
+    "id": "notif-1",
+    "userId": "e-mgr-1",
+    "type": "TIMESHEET_SUBMITTED",
+    "title": "Timesheet Awaiting Approval",
+    "message": "Carla Singh submitted a timesheet for week of 2026-06-15.",
+    "isRead": false,
+    "relatedId": "ts-2",
+    "createdAt": "2026-06-21T10:00:00.000Z"
+  },
+  {
+    "id": "notif-2",
+    "userId": "e-emp-1",
+    "type": "TIMESHEET_APPROVED",
+    "title": "Timesheet Approved",
+    "message": "Your timesheet for week of 2026-06-08 has been approved.",
+    "isRead": true,
+    "relatedId": "ts-3",
+    "createdAt": "2026-06-15T11:00:00.000Z"
+  }
+]

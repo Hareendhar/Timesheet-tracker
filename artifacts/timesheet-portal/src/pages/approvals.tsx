@@ -1,14 +1,21 @@
-import { useListTimesheets, useBulkTimesheetAction } from "@workspace/api-client-react";
+import { useListTimesheets, useBulkTimesheetAction, getListTimesheetsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import {
+  Tabs, TabsList, TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious,
+} from "@/components/ui/pagination";
 import { format, parseISO } from "date-fns";
-import { Eye, Check, X, CheckCheck } from "lucide-react";
+import { Eye, Check, X, CheckCheck, History as HistoryIcon } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -16,9 +23,52 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function Approvals() {
+const PAGE_SIZE = 10;
+
+function getStatusBadge(status: string) {
+  switch (status) {
+    case "Approved": return <Badge className="bg-green-500/15 text-green-700 hover:bg-green-500/25 border-green-200">Approved</Badge>;
+    case "Rejected": return <Badge className="bg-red-500/15 text-red-700 hover:bg-red-500/25 border-red-200">Rejected</Badge>;
+    default: return <Badge variant="outline">{status}</Badge>;
+  }
+}
+
+function PageControls({ page, total, onPageChange }: { page: number; total: number; onPageChange: (page: number) => void }) {
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (totalPages <= 1) return null;
+
+  return (
+    <Pagination className="pt-4">
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+            href="#"
+            onClick={(e) => { e.preventDefault(); if (page > 1) onPageChange(page - 1); }}
+            className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+          />
+        </PaginationItem>
+        <PaginationItem>
+          <span className="text-sm text-muted-foreground px-3">Page {page} of {totalPages}</span>
+        </PaginationItem>
+        <PaginationItem>
+          <PaginationNext
+            href="#"
+            onClick={(e) => { e.preventDefault(); if (page < totalPages) onPageChange(page + 1); }}
+            className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  );
+}
+
+function PendingTab() {
   const { toast } = useToast();
-  const { data: timesheets, isLoading, refetch } = useListTimesheets({ status: "Submitted", pageSize: 50 });
+  const [page, setPage] = useState(1);
+  const params = { status: "Submitted", page, pageSize: PAGE_SIZE };
+  const { data: timesheets, isLoading, refetch } = useListTimesheets(params, {
+    query: { queryKey: getListTimesheetsQueryKey(params) },
+  });
   const bulkAction = useBulkTimesheetAction();
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -26,11 +76,11 @@ export default function Approvals() {
   const [rejectComment, setRejectComment] = useState("");
 
   const rows = timesheets?.data ?? [];
-  const allSelected = rows.length > 0 && rows.every(r => selectedIds.has(r.id));
+  const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
 
   const toggleAll = () => {
     if (allSelected) setSelectedIds(new Set());
-    else setSelectedIds(new Set(rows.map(r => r.id)));
+    else setSelectedIds(new Set(rows.map((r) => r.id)));
   };
 
   const toggleOne = (id: string) => {
@@ -70,12 +120,7 @@ export default function Approvals() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-sidebar">Approval Queue</h1>
-        <p className="text-muted-foreground mt-1">Review and approve submitted timesheets.</p>
-      </div>
-
+    <>
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-md px-4 py-3">
           <span className="text-sm font-medium text-primary">{selectedIds.size} selected</span>
@@ -104,54 +149,57 @@ export default function Approvals() {
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
           ) : rows.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">
-                      <Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Select all" />
-                    </TableHead>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Week Of</TableHead>
-                    <TableHead className="text-right">Total Hours</TableHead>
-                    <TableHead>Submitted On</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((ts) => (
-                    <TableRow key={ts.id} className={selectedIds.has(ts.id) ? "bg-primary/5" : ""}>
-                      <TableCell>
-                        <Checkbox checked={selectedIds.has(ts.id)} onCheckedChange={() => toggleOne(ts.id)} />
-                      </TableCell>
-                      <TableCell className="font-medium">{ts.employeeName}</TableCell>
-                      <TableCell>{ts.weekStartDate ? format(parseISO(ts.weekStartDate), "MMM d, yyyy") : "-"}</TableCell>
-                      <TableCell className="text-right">{ts.totalHours}</TableCell>
-                      <TableCell>
-                        {ts.submittedAt ? format(parseISO(ts.submittedAt), "MMM d, yyyy HH:mm") : "-"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Link href={`/timesheets/${ts.id}`}>
-                            <Button variant="ghost" size="icon" title="View details"><Eye className="h-4 w-4" /></Button>
-                          </Link>
-                          <Button variant="outline" size="icon" title="Approve"
-                            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                            onClick={() => handleApprove([ts.id])} disabled={bulkAction.isPending}>
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="icon" title="Reject"
-                            className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                            onClick={() => openRejectDialog([ts.id])} disabled={bulkAction.isPending}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Select all" />
+                      </TableHead>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Week Of</TableHead>
+                      <TableHead className="text-right">Total Hours</TableHead>
+                      <TableHead>Submitted On</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((ts) => (
+                      <TableRow key={ts.id} className={selectedIds.has(ts.id) ? "bg-primary/5" : ""}>
+                        <TableCell>
+                          <Checkbox checked={selectedIds.has(ts.id)} onCheckedChange={() => toggleOne(ts.id)} />
+                        </TableCell>
+                        <TableCell className="font-medium">{ts.employeeName}</TableCell>
+                        <TableCell>{ts.weekStartDate ? format(parseISO(ts.weekStartDate), "MMM d, yyyy") : "-"}</TableCell>
+                        <TableCell className="text-right">{ts.totalHours}</TableCell>
+                        <TableCell>
+                          {ts.submittedAt ? format(parseISO(ts.submittedAt), "MMM d, yyyy HH:mm") : "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Link href={`/timesheets/${ts.id}`}>
+                              <Button variant="ghost" size="icon" title="View details"><Eye className="h-4 w-4" /></Button>
+                            </Link>
+                            <Button variant="outline" size="icon" title="Approve"
+                              className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                              onClick={() => handleApprove([ts.id])} disabled={bulkAction.isPending}>
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="icon" title="Reject"
+                              className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                              onClick={() => openRejectDialog([ts.id])} disabled={bulkAction.isPending}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <PageControls page={page} total={timesheets?.total ?? 0} onPageChange={setPage} />
+            </>
           ) : (
             <div className="text-center py-12">
               <Check className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
@@ -180,6 +228,100 @@ export default function Approvals() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
+  );
+}
+
+function HistoryTab() {
+  const [page, setPage] = useState(1);
+  const params = { status: "Approved,Rejected", page, pageSize: PAGE_SIZE };
+  const { data: timesheets, isLoading } = useListTimesheets(params, {
+    query: { queryKey: getListTimesheetsQueryKey(params) },
+  });
+
+  const rows = timesheets?.data ?? [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Approval History</CardTitle>
+        <CardDescription>Timesheets you've already approved or rejected.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+          </div>
+        ) : rows.length > 0 ? (
+          <>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Week Of</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Total Hours</TableHead>
+                    <TableHead>Decided On</TableHead>
+                    <TableHead>Details</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((ts) => (
+                    <TableRow key={ts.id}>
+                      <TableCell className="font-medium">{ts.employeeName}</TableCell>
+                      <TableCell>{ts.weekStartDate ? format(parseISO(ts.weekStartDate), "MMM d, yyyy") : "-"}</TableCell>
+                      <TableCell>{getStatusBadge(ts.status)}</TableCell>
+                      <TableCell className="text-right">{ts.totalHours}</TableCell>
+                      <TableCell>
+                        {ts.updatedAt ? format(parseISO(ts.updatedAt), "MMM d, yyyy HH:mm") : "-"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[220px] truncate">
+                        {ts.status === "Approved" ? (ts.approverName ? `Approved by ${ts.approverName}` : "-") : (ts.rejectionComment || "-")}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link href={`/timesheets/${ts.id}`}>
+                          <Button variant="ghost" size="icon" title="View details"><Eye className="h-4 w-4" /></Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <PageControls page={page} total={timesheets?.total ?? 0} onPageChange={setPage} />
+          </>
+        ) : (
+          <div className="text-center py-12">
+            <HistoryIcon className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+            <h3 className="text-lg font-medium">No history yet</h3>
+            <p className="text-muted-foreground mt-1">Timesheets you approve or reject will show up here.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function Approvals() {
+  const [tab, setTab] = useState<"pending" | "history">("pending");
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-sidebar">Approval Queue</h1>
+        <p className="text-muted-foreground mt-1">Review submitted timesheets and look back at past decisions.</p>
+      </div>
+
+      <Tabs value={tab} onValueChange={(v) => setTab(v as "pending" | "history")}>
+        <TabsList>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {tab === "pending" ? <PendingTab /> : <HistoryTab />}
     </div>
   );
 }

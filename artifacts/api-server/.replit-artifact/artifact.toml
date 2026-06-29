@@ -10,18 +10,15 @@ name = "API Server"
 paths = ["/api"]
 
 [services.development]
-run = "cd /home/runner/workspace/artifacts/api-server && dotnet run"
+run = "cd /home/runner/workspace/artifacts/api-server && node src/index.js"
 
 [services.development.env]
 PORT = "8080"
 
 [services.production]
 
-[services.production.build]
-args = ["dotnet", "publish", "/home/runner/workspace/artifacts/api-server/TimesheetApi.csproj", "-c", "Release", "-o", "/home/runner/workspace/artifacts/api-server/publish"]
-
 [services.production.run]
-args = ["dotnet", "/home/runner/workspace/artifacts/api-server/publish/TimesheetApi.dll"]
+args = ["node", "/home/runner/workspace/artifacts/api-server/src/index.js"]
 
 [services.production.run.env]
 PORT = "8080"
