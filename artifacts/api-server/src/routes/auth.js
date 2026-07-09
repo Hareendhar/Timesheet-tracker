@@ -1,7 +1,7 @@
 const express = require("express");
 const crypto = require("crypto");
 const { OAuth2Client } = require("google-auth-library");
-const { store } = require("../data/store");
+// const { store } = require("../data/store");
 const employeeRepo = require("../repositories/employees");
 const { asyncHandler } = require("../lib/auth");
 
@@ -55,22 +55,34 @@ router.get(
   "/users",
   requireDevMode,
   asyncHandler(async (req, res) => {
-    const rows = store.employees
-      .filter((e) => e.status === "Active")
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((e) => ({
-        id: e.id,
-        employeeId: e.employeeId,
-        name: e.name,
-        email: e.email,
-        department: e.department,
-        designation: e.designation,
-        role: e.role,
-        managerId: e.managerId ?? null,
-        status: e.status,
-        createdAt: e.createdAt,
-        updatedAt: e.updatedAt,
-      }));
+    // const rows = store.employees
+    //   .filter((e) => e.status === "Active")
+    //   .sort((a, b) => a.name.localeCompare(b.name))
+    //   .map((e) => ({
+    //     id: e.id,
+    //     employeeId: e.employeeId,
+    //     name: e.name,
+    //     email: e.email,
+    //     department: e.department,
+    //     designation: e.designation,
+    //     role: e.role,
+    //     managerId: e.managerId ?? null,
+    //     status: e.status,
+    //     createdAt: e.createdAt,
+    //     updatedAt: e.updatedAt,
+    //   }));
+
+    const result = await employeeRepo.findAll(
+      1,
+      1000,
+      "",        // search
+      "",        // role
+      "Active",  // status
+      "",        // department
+      ""         // managerId
+    );
+
+    const rows = result.data;
     res.json(rows);
   }),
 );
@@ -85,8 +97,13 @@ router.post(
   "/select-user",
   requireDevMode,
   asyncHandler(async (req, res) => {
-    const employee = store.employees.find((e) => e.id === req.body.id);
-    if (!employee) return res.status(404).json({ error: "Employee not found" });
+
+    const employee = await employeeRepo.findById(req.body.id);
+
+    if (!employee)
+      return res.status(404).json({ error: "Employee not found" });
+    // const employee = store.employees.find((e) => e.id === req.body.id);
+    // if (!employee) return res.status(404).json({ error: "Employee not found" });
 
     req.session.user = sessionUserFromEmployee(employee);
     res.json(req.session.user);

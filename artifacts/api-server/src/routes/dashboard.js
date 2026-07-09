@@ -1,5 +1,8 @@
 const express = require("express");
-const { store } = require("../data/store");
+// const { store } = require("../data/store");
+const employeeRepo = require("../repositories/employees");
+const clientRepo = require("../repositories/clients");
+const projectRepo = require("../repositories/projects");
 const timesheetRepo = require("../repositories/timesheets");
 const { requireAuth, requireRole, asyncHandler } = require("../lib/auth");
 
@@ -11,12 +14,42 @@ router.get(
   asyncHandler(async (req, res) => {
     const breakdown = await timesheetRepo.getStatusBreakdown();
 
-    const activeEmployees = store.employees.filter((e) => e.status === "Active");
+    // const activeEmployees = store.employees.filter((e) => e.status === "Active");
+    // const total = activeEmployees.length;
+    // const managers = activeEmployees.filter((e) => e.role === "Manager").length;
+    // const clientCount = store.clients.filter((c) => c.status === "Active").length;
+    // const projectCount = store.projects.filter((p) => p.status === "Active").length;
+    const employees = await employeeRepo.findAll(
+      1,
+      10000,
+      "",
+      "",
+      "Active",
+      "",
+      ""
+    );
+
+    const clients = await clientRepo.findAll(
+      1,
+      10000,
+      "",
+      "Active"
+    );
+
+    const projects = await projectRepo.findAll(
+      1,
+      10000,
+      "",
+      "Active",
+      ""
+    );
+
+    const activeEmployees = employees.data;
+
     const total = activeEmployees.length;
     const managers = activeEmployees.filter((e) => e.role === "Manager").length;
-    const clientCount = store.clients.filter((c) => c.status === "Active").length;
-    const projectCount = store.projects.filter((p) => p.status === "Active").length;
-
+    const clientCount = clients.data.length;
+    const projectCount = projects.data.length;
     const submitted = breakdown.submitted + breakdown.approved + breakdown.rejected;
     const pending = breakdown.submitted;
     const complianceRate = total > 0 ? Math.round((breakdown.approved / Math.max(submitted, 1)) * 100) : 0;

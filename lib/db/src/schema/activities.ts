@@ -14,3 +14,4 @@ export const activitiesTable = pgTable("activities", {
 export const insertActivitySchema = createInsertSchema(activitiesTable).omit({ createdAt: true });
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activitiesTable.$inferSelect;
+

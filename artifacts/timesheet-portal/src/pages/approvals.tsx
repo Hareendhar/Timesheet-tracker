@@ -9,7 +9,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Tabs, TabsList, TabsTrigger,
+  Tabs, TabsList, TabsTrigger, 
 } from "@/components/ui/tabs";
 import {
   Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious,

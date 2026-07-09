@@ -127,8 +127,17 @@ router.post(
     }
 
     const existing = await timesheetRepo.findByEmployeeAndWeek(employeeId, weekStartDate);
+
     if (existing && existing.status !== "Draft")
-      return res.status(400).json({ error: "A non-draft timesheet for this week already exists" });
+      return res.status(400).json({
+        error: "A non-draft timesheet for this week already exists",
+      });
+
+    
+
+    // const existing = await timesheetRepo.findByEmployeeAndWeek(employeeId, weekStartDate);
+    // if (existing && existing.status !== "Draft")
+    //   return res.status(400).json({ error: "A non-draft timesheet for this week already exists" });
 
     const ts = existing
       ? await timesheetRepo.update(existing.id, rows)

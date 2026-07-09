@@ -16,3 +16,5 @@ export const clientsTable = pgTable("clients", {
 export const insertClientSchema = createInsertSchema(clientsTable).omit({ createdAt: true, updatedAt: true });
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Client = typeof clientsTable.$inferSelect;
+
+

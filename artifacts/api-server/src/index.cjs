@@ -1,8 +1,13 @@
 require("dotenv").config();
+// import "dotenv/config";
 
 const express = require("express");
 const cors = require("cors");
 const session = require("express-session");
+
+// import express from "express";
+// import cors from "cors";
+// import session from "express-session";
 
 const authRoutes = require("./routes/auth");
 const employeesRoutes = require("./routes/employees");

@@ -20,5 +20,8 @@ export const employeesTable = pgTable("employees", {
 });
 
 export const insertEmployeeSchema = createInsertSchema(employeesTable).omit({ createdAt: true, updatedAt: true });
+
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 export type Employee = typeof employeesTable.$inferSelect;
+
+

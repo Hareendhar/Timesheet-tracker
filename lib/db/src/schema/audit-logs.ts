@@ -19,3 +19,5 @@ export const auditLogsTable = pgTable("audit_logs", {
 export const insertAuditLogSchema = createInsertSchema(auditLogsTable).omit({ createdAt: true });
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type AuditLog = typeof auditLogsTable.$inferSelect;
+    
+

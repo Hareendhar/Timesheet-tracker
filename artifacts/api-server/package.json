@@ -2,13 +2,19 @@
   "name": "@workspace/api-server",
   "version": "1.0.0",
   "private": true,
+  
   "description": "Versatile Timesheet Tracker API server (Node/Express, in-memory JSON data store for local dev)",
   "main": "src/index.js",
+  
+  
   "scripts": {
-    "dev": "node src/index.js",
-    "start": "node src/index.js"
-  },
+  "dev": "tsx src/index.cjs",
+  "start": "tsx src/index.cjs"
+  } ,
+
+  
   "dependencies": {
+    "@workspace/db": "workspace:*",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "exceljs": "^4.4.0",
