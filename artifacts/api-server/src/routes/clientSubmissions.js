@@ -1,6 +1,24 @@
 const express = require("express");
 const ExcelJS = require("exceljs");
-const { store } = require("../data/store");
+
+const timesheetRepo = require("../repositories/timesheets");
+// const { store } = require("../data/store");
+
+// const { db } = require("@workspace/db");
+const {
+  db,
+  employeesTable,
+  clientsTable,
+  projectsTable,
+  activitiesTable,
+  timesheetsTable,
+  timesheetRowsTable,
+} = require("@workspace/db");
+
+// const {eq,and,inArray,desc,} = require("drizzle-orm");
+const { eq, and, inArray, desc, ilike } = require("drizzle-orm");
+
+
 const auditRepo = require("../repositories/audit");
 const { requireRole, asyncHandler } = require("../lib/auth");
 const { getClientIp } = require("../lib/clientIp");
@@ -8,22 +26,88 @@ const { getClientIp } = require("../lib/clientIp");
 const router = express.Router();
 router.use(requireRole("HR"));
 
-function rowsForTimesheet(timesheetId) {
-  return store.timesheetRows.filter((r) => r.timesheetId === timesheetId);
+// function rowsForTimesheet(timesheetId) {
+//   return store.timesheetRows.filter((r) => r.timesheetId === timesheetId);
+// }
+
+
+
+// function projectsForTimesheet(timesheetId) {
+//   const projectIds = new Set(rowsForTimesheet(timesheetId).map((r) => r.projectId));
+//   return [...projectIds].map((id) => store.projects.find((p) => p.id === id)).filter(Boolean);
+// }
+
+
+async function rowsForTimesheet(timesheetId) {
+  return await db
+    .select()
+    .from(timesheetRowsTable)
+    .where(eq(timesheetRowsTable.timesheetId, timesheetId));
 }
 
-function projectsForTimesheet(timesheetId) {
-  const projectIds = new Set(rowsForTimesheet(timesheetId).map((r) => r.projectId));
-  return [...projectIds].map((id) => store.projects.find((p) => p.id === id)).filter(Boolean);
+async function projectsForTimesheet(timesheetId) {
+  const rows = await rowsForTimesheet(timesheetId);
+
+  if (!rows.length) return [];
+
+  const projectIds = rows.map((r) => r.projectId);
+
+  return await db
+    .select()
+    .from(projectsTable)
+    .where(inArray(projectsTable.id, projectIds));
 }
 
-function buildSummaryRow(t) {
-  const employee = store.employees.find((e) => e.id === t.employeeId);
-  const manager = employee?.managerId ? store.employees.find((e) => e.id === employee.managerId) : null;
-  const projects = projectsForTimesheet(t.id);
-  const clients = projects
-    .map((p) => store.clients.find((c) => c.id === p.clientId))
-    .filter(Boolean);
+// function buildSummaryRow(t) {
+//   const employee = store.employees.find((e) => e.id === t.employeeId);
+//   const manager = employee?.managerId ? store.employees.find((e) => e.id === employee.managerId) : null;
+//   const projects = projectsForTimesheet(t.id);
+//   const clients = projects
+//     .map((p) => store.clients.find((c) => c.id === p.clientId))
+//     .filter(Boolean);
+
+//   const uniqueSorted = (arr) => [...new Set(arr)].sort();
+
+//   return {
+//     id: t.id,
+//     employeeId: t.employeeId,
+//     weekStartDate: t.weekStartDate,
+//     weekEndDate: t.weekEndDate,
+//     status: t.status,
+//     totalHours: t.totalHours,
+//     submittedAt: t.submittedAt ?? null,
+//     approvedAt: t.approvedAt ?? null,
+//     approvedBy: t.approvedBy ?? null,
+//     clientSubmittedAt: t.clientSubmittedAt ?? null,
+//     clientSubmittedBy: t.clientSubmittedBy ?? null,
+//     employeeName: employee?.name ?? null,
+//     employeeCode: employee?.employeeId ?? null,
+//     department: employee?.department ?? null,
+//     managerName: manager?.name ?? null,
+//     projectNames: uniqueSorted(projects.map((p) => p.name)).join(", ") || null,
+//     projectCodes: uniqueSorted(projects.map((p) => p.projectCode)).join(", ") || null,
+//     clientNames: uniqueSorted(clients.map((c) => c.name)).join(", ") || null,
+//     clientManagerNames: uniqueSorted(projects.map((p) => p.clientManagerName).filter(Boolean)).join(", ") || null,
+//     clientManagerEmails: uniqueSorted(projects.map((p) => p.clientManagerEmail).filter(Boolean)).join(", ") || null,
+//   };
+// }
+
+async function buildSummaryRow(t) {
+  const employee = await db
+    .select()
+    .from(employeesTable)
+    .where(eq(employeesTable.id, t.employeeId))
+    .then((rows) => rows[0]);
+
+  const manager = employee?.managerId
+    ? await db
+      .select()
+      .from(employeesTable)
+      .where(eq(employeesTable.id, employee.managerId))
+      .then((rows) => rows[0])
+    : null;
+
+  const projects = await projectsForTimesheet(t.id);
 
   const uniqueSorted = (arr) => [...new Set(arr)].sort();
 
@@ -39,46 +123,138 @@ function buildSummaryRow(t) {
     approvedBy: t.approvedBy ?? null,
     clientSubmittedAt: t.clientSubmittedAt ?? null,
     clientSubmittedBy: t.clientSubmittedBy ?? null,
+
     employeeName: employee?.name ?? null,
     employeeCode: employee?.employeeId ?? null,
     department: employee?.department ?? null,
     managerName: manager?.name ?? null,
+
     projectNames: uniqueSorted(projects.map((p) => p.name)).join(", ") || null,
     projectCodes: uniqueSorted(projects.map((p) => p.projectCode)).join(", ") || null,
-    clientNames: uniqueSorted(clients.map((c) => c.name)).join(", ") || null,
-    clientManagerNames: uniqueSorted(projects.map((p) => p.clientManagerName).filter(Boolean)).join(", ") || null,
-    clientManagerEmails: uniqueSorted(projects.map((p) => p.clientManagerEmail).filter(Boolean)).join(", ") || null,
+    clientNames: uniqueSorted(projects.map((p) => p.clientName)).join(", ") || null,
+
+    clientManagerNames: uniqueSorted(
+      projects.map((p) => p.clientManagerName).filter(Boolean)
+    ).join(", ") || null,
+
+    clientManagerEmails: uniqueSorted(
+      projects.map((p) => p.clientManagerEmail).filter(Boolean)
+    ).join(", ") || null,
   };
 }
 
 router.get(
   "/",
   asyncHandler(async (req, res) => {
+    console.log("CLIENT SUBMISSIONS GET START");
     const { page = 1, pageSize = 20, projectId, clientManagerEmail, managerId, status } = req.query;
 
-    let rows = store.timesheets.filter((t) => ["Approved", "ClientSubmitted"].includes(t.status));
-    if (status) rows = rows.filter((t) => t.status === status);
-    if (managerId) {
-      const teamIds = new Set(store.employees.filter((e) => e.managerId === managerId).map((e) => e.id));
-      rows = rows.filter((t) => teamIds.has(t.employeeId));
+
+
+    const conditions = [
+      inArray(timesheetsTable.status, ["Approved", "ClientSubmitted"]),
+    ];
+
+    if (status) {
+      conditions.push(eq(timesheetsTable.status, status));
     }
-    if (projectId) rows = rows.filter((t) => rowsForTimesheet(t.id).some((r) => r.projectId === projectId));
+
+    let rows = await db
+      .select()
+      .from(timesheetsTable)
+      .where(and(...conditions))
+      .orderBy(desc(timesheetsTable.weekStartDate));
+
+    if (managerId) {
+      const team = await db
+        .select()
+        .from(employeesTable)
+        .where(eq(employeesTable.managerId, managerId));
+
+      const employeeIds = new Set(team.map((e) => e.id));
+
+      rows = rows.filter((t) => employeeIds.has(t.employeeId));
+    }
+
+    if (projectId) {
+      const projectRows = await db
+        .select()
+        .from(timesheetRowsTable)
+        .where(eq(timesheetRowsTable.projectId, projectId));
+
+      const ids = new Set(projectRows.map((r) => r.timesheetId));
+
+      rows = rows.filter((t) => ids.has(t.id));
+    }
+
     if (clientManagerEmail) {
+      const projects = await db
+        .select({
+          timesheetId: timesheetRowsTable.timesheetId,
+          email: projectsTable.clientManagerEmail,
+        })
+        .from(timesheetRowsTable)
+        .innerJoin(
+          projectsTable,
+          eq(timesheetRowsTable.projectId, projectsTable.id)
+        );
+
       const q = clientManagerEmail.toLowerCase();
-      rows = rows.filter((t) =>
-        projectsForTimesheet(t.id).some((p) => p.clientManagerEmail?.toLowerCase().includes(q)),
+
+      const ids = new Set(
+        projects
+          .filter((p) =>
+            p.email?.toLowerCase().includes(q)
+          )
+          .map((p) => p.timesheetId)
       );
+
+      rows = rows.filter((t) => ids.has(t.id));
     }
 
     const total = rows.length;
-    const sorted = [...rows].sort((a, b) => {
-      if (a.weekStartDate !== b.weekStartDate) return a.weekStartDate < b.weekStartDate ? 1 : -1;
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
-    const offset = (Number(page) - 1) * Number(pageSize);
-    const data = sorted.slice(offset, offset + Number(pageSize)).map(buildSummaryRow);
 
-    res.json({ data, total, page: Number(page), pageSize: Number(pageSize) });
+    const offset =
+      (Number(page) - 1) * Number(pageSize);
+
+    const data = await Promise.all(
+      rows
+        .slice(offset, offset + Number(pageSize))
+        .map(buildSummaryRow)
+    );
+
+    console.log("CLIENT SUBMISSIONS DATA READY", data.length);
+
+    res.json({
+      data,
+      total,
+      page: Number(page),
+      pageSize: Number(pageSize),
+    });
+
+    // let rows = store.timesheets.filter((t) => ["Approved", "ClientSubmitted"].includes(t.status));
+    // if (status) rows = rows.filter((t) => t.status === status);
+    // if (managerId) {
+    //   const teamIds = new Set(store.employees.filter((e) => e.managerId === managerId).map((e) => e.id));
+    //   rows = rows.filter((t) => teamIds.has(t.employeeId));
+    // }
+    // if (projectId) rows = rows.filter((t) => rowsForTimesheet(t.id).some((r) => r.projectId === projectId));
+    // if (clientManagerEmail) {
+    //   const q = clientManagerEmail.toLowerCase();
+    //   rows = rows.filter((t) =>
+    //     projectsForTimesheet(t.id).some((p) => p.clientManagerEmail?.toLowerCase().includes(q)),
+    //   );
+    // }
+
+    // const total = rows.length;
+    // const sorted = [...rows].sort((a, b) => {
+    //   if (a.weekStartDate !== b.weekStartDate) return a.weekStartDate < b.weekStartDate ? 1 : -1;
+    //   return new Date(b.createdAt) - new Date(a.createdAt);
+    // });
+    // const offset = (Number(page) - 1) * Number(pageSize);
+    // const data = sorted.slice(offset, offset + Number(pageSize)).map(buildSummaryRow);
+
+    // res.json({ data, total, page: Number(page), pageSize: Number(pageSize) });
   }),
 );
 
@@ -90,19 +266,45 @@ router.post(
       return res.status(400).json({ error: "timesheetIds is required" });
 
     const user = req.session.user;
-    const now = new Date().toISOString();
+
+
+    const now = new Date();
     let submitted = 0;
 
     for (const tsId of timesheetIds) {
-      const ts = store.timesheets.find((t) => t.id === tsId && t.status === "Approved");
-      if (ts) {
-        ts.status = "ClientSubmitted";
-        ts.clientSubmittedAt = now;
-        ts.clientSubmittedBy = user.name;
-        ts.updatedAt = now;
+      const result = await db
+        .update(timesheetsTable)
+        .set({
+          status: "ClientSubmitted",
+          clientSubmittedAt: now,
+          clientSubmittedBy: user.name,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(timesheetsTable.id, tsId),
+            eq(timesheetsTable.status, "Approved")
+          )
+        )
+        .returning();
+
+      if (result.length > 0) {
         submitted++;
       }
     }
+    // const now = new Date().toISOString();
+    // let submitted = 0;
+
+    // for (const tsId of timesheetIds) {
+    //   const ts = store.timesheets.find((t) => t.id === tsId && t.status === "Approved");
+    //   if (ts) {
+    //     ts.status = "ClientSubmitted";
+    //     ts.clientSubmittedAt = now;
+    //     ts.clientSubmittedBy = user.name;
+    //     ts.updatedAt = now;
+    //     submitted++;
+    //   }
+    // }
 
     await auditRepo.create({
       userId: user.id,
@@ -127,15 +329,55 @@ router.get(
 
     const detailRows = [];
     for (const tsId of ids) {
-      const t = store.timesheets.find((x) => x.id === tsId);
-      if (!t) continue;
-      const employee = store.employees.find((e) => e.id === t.employeeId);
-      const manager = employee?.managerId ? store.employees.find((e) => e.id === employee.managerId) : null;
 
-      for (const r of rowsForTimesheet(t.id)) {
-        const project = store.projects.find((p) => p.id === r.projectId);
-        const client = project ? store.clients.find((c) => c.id === project.clientId) : null;
-        const activity = store.activities.find((a) => a.id === r.activityId);
+      const t = await db
+        .select()
+        .from(timesheetsTable)
+        .where(eq(timesheetsTable.id, tsId))
+        .then((rows) => rows[0]);
+
+      if (!t) continue;
+
+
+      const employee = await db
+        .select()
+        .from(employeesTable)
+        .where(eq(employeesTable.id, t.employeeId))
+        .then((rows) => rows[0]);
+
+
+      const manager = employee?.managerId
+        ? await db
+          .select()
+          .from(employeesTable)
+          .where(eq(employeesTable.id, employee.managerId))
+          .then((rows) => rows[0])
+        : null;
+
+
+      const timesheetRows = await rowsForTimesheet(t.id);
+
+      for (const r of timesheetRows) {
+        // const project = store.projects.find((p) => p.id === r.projectId);
+        const project = await db
+          .select()
+          .from(projectsTable)
+          .where(eq(projectsTable.id, r.projectId))
+          .then((rows) => rows[0]);
+        // const client = project ? store.clients.find((c) => c.id === project.clientId) : null;
+        const client = project
+  ? await db
+      .select()
+      .from(clientsTable)
+      .where(eq(clientsTable.id, project.clientId))
+      .then((rows) => rows[0])
+  : null;
+        // const activity = store.activities.find((a) => a.id === r.activityId);
+        const activity = await db
+  .select()
+  .from(activitiesTable)
+  .where(eq(activitiesTable.id, r.activityId))
+  .then((rows) => rows[0]);
         detailRows.push({
           employee_name: employee?.name ?? "",
           employee_code: employee?.employeeId ?? "",

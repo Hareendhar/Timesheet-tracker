@@ -1,7 +1,7 @@
 // const { store } = require("../data/store");
 // const { newId } = require("../lib/id");
 
-const {db,timesheetsTable,timesheetRowsTable,employeesTable,projectsTable,activitiesTable,} = require("@workspace/db");
+const { db, timesheetsTable, timesheetRowsTable, employeesTable, projectsTable, clientsTable, activitiesTable, } = require("@workspace/db");
 
 // const {eq,and,inArray,desc,asc,sql,} = require("drizzle-orm");
 
@@ -69,10 +69,27 @@ function buildRow(rowId, timesheetId, row, total, now) {
 async function enrichTimesheet(ts) {
   const [employee] = await db
     .select({
+      id: employeesTable.id,
       name: employeesTable.name,
+      employeeId: employeesTable.employeeId,
+      department: employeesTable.department,
+      managerId: employeesTable.managerId,
     })
     .from(employeesTable)
     .where(eq(employeesTable.id, ts.employeeId));
+
+
+
+  let manager = null;
+
+  if (employee?.managerId) {
+    [manager] = await db
+      .select({
+        name: employeesTable.name,
+      })
+      .from(employeesTable)
+      .where(eq(employeesTable.id, employee.managerId));
+  }
 
   let approver = null;
 
@@ -89,9 +106,18 @@ async function enrichTimesheet(ts) {
     .select({
       id: timesheetRowsTable.id,
       timesheetId: timesheetRowsTable.timesheetId,
+      // projectId: timesheetRowsTable.projectId,
+      // projectName: projectsTable.name,
+      // activityId: timesheetRowsTable.activityId,
       projectId: timesheetRowsTable.projectId,
+      projectCode: projectsTable.projectCode,
       projectName: projectsTable.name,
+      clientId: projectsTable.clientId,
+      clientName: clientsTable.name,
+      clientManagerName: projectsTable.clientManagerName,
+      clientManagerEmail: projectsTable.clientManagerEmail,
       activityId: timesheetRowsTable.activityId,
+
       activityName: activitiesTable.name,
       monday: timesheetRowsTable.monday,
       tuesday: timesheetRowsTable.tuesday,
@@ -124,6 +150,10 @@ async function enrichTimesheet(ts) {
       eq(timesheetRowsTable.projectId, projectsTable.id)
     )
     .leftJoin(
+      clientsTable,
+      eq(projectsTable.clientId, clientsTable.id)
+    )
+    .leftJoin(
       activitiesTable,
       eq(timesheetRowsTable.activityId, activitiesTable.id)
     )
@@ -133,6 +163,11 @@ async function enrichTimesheet(ts) {
     id: ts.id,
     employeeId: ts.employeeId,
     employeeName: employee?.name ?? null,
+    employeeCode: employee?.employeeId ?? null,
+    department: employee?.department ?? null,
+    managerName: manager?.name ?? null,
+    // employeeId: ts.employeeId,
+    // employeeName: employee?.name ?? null,
     weekStartDate: ts.weekStartDate,
     weekEndDate: ts.weekEndDate,
     status: ts.status,
