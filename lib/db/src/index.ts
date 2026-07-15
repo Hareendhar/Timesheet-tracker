@@ -6,14 +6,21 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
+// Temporary debug log
+const dbUrl = process.env.DATABASE_URL;
+
+console.log(
+  "DATABASE_URL:",
+  dbUrl?.replace(/:(.*?)@/, ":****@")
+);
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: dbUrl,
 });
 
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";
-
 
 
 
