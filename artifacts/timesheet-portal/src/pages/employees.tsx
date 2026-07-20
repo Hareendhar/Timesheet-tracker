@@ -32,6 +32,17 @@ export default function Employees() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: employees, isLoading } = useListEmployees({ search: search || undefined, pageSize: 50 });
+
+  // const managers =
+  //   employees?.data.filter((e) => e.role === "Manager") ?? [];
+
+  const managers =
+    employees?.data.filter(
+      (e) =>
+        (e.role === "Manager" || e.role === "HR") &&
+        e.status === "Active"
+    ) ?? [];
+
   const createEmployee = useCreateEmployee();
   const updateEmployee = useUpdateEmployee();
   const bulkUpload = useBulkUploadEmployees();
@@ -52,7 +63,15 @@ export default function Employees() {
 
   const handleSave = async () => {
     try {
-      const payload = { ...form, managerId: form.managerId || null };
+      // const payload = { ...form, managerId: form.managerId || null };
+      const payload = {
+        ...form,
+        managerId:
+          form.managerId && form.managerId !== "none"
+            ? form.managerId
+            : null,
+      };
+
       if (dialog.editing) {
         await updateEmployee.mutateAsync({ employeeId: dialog.editing.id, data: payload as any });
         toast({ title: "Employee updated" });
@@ -253,6 +272,11 @@ export default function Employees() {
               <Label>Designation</Label>
               <Input placeholder="e.g. Senior Developer" value={form.designation} onChange={(e) => setForm({ ...form, designation: e.target.value })} />
             </div>
+
+
+
+
+
             <div className="space-y-1.5">
               <Label>Role</Label>
               <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
@@ -264,6 +288,42 @@ export default function Employees() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1.5">
+              <Label>Reporting Manager</Label>
+
+              <Select
+                value={form.managerId}
+                onValueChange={(value) =>
+                  setForm({ ...form, managerId: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Manager" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="none">No Manager</SelectItem>
+
+                  {managers.map((manager) => (
+                    <SelectItem
+                      key={manager.id}
+                      value={manager.id}
+                    >
+                      {manager.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+
+
+
+
+
+
+
+
             <div className="space-y-1.5">
               <Label>Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>

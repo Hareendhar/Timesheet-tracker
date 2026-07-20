@@ -6,25 +6,17 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
-// Temporary debug log
-const dbUrl = process.env.DATABASE_URL;
-
-console.log(
-  "DATABASE_URL:",
-  dbUrl?.replace(/:(.*?)@/, ":****@")
-);
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL must be set.");
+}
 
 export const pool = new Pool({
-  connectionString: dbUrl,
+  connectionString: process.env.DATABASE_URL,
 });
 
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";
-
-
-
-
 
 
 

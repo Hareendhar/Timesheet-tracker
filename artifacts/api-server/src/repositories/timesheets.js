@@ -349,6 +349,26 @@ async function findByEmployeeAndWeek(employeeId, weekStartDate) {
   return findById(ts.id);
 }
 
+
+async function findApprovedByMonth(projectId, year, month) {
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+
+  const endDate = new Date(year, month, 0)
+    .toISOString()
+    .slice(0, 10);
+
+  const rows = await db
+    .select()
+    .from(timesheetsTable)
+    .where(
+      and(
+        eq(timesheetsTable.status, "Approved")
+      )
+    );
+
+  return Promise.all(rows.map(enrichTimesheet));
+}
+
 async function create(employeeId, weekStartDate, rows) {
   const id = crypto.randomUUID();
   const now = new Date();
@@ -836,6 +856,7 @@ module.exports = {
   findAll,
   findById,
   findByEmployeeAndWeek,
+  findApprovedByMonth,
   create,
   update,
   submit,

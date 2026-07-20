@@ -1,6 +1,7 @@
 require("dotenv").config();
 // import "dotenv/config";
 
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const session = require("express-session");
@@ -25,7 +26,17 @@ const healthRoutes = require("./routes/health");
 const { InvalidTransitionException } = require("./lib/exceptions");
 
 const app = express();
+
+const frontendPath = path.resolve(
+  __dirname,
+  "../../timesheet-portal/dist/public"
+);
+
+
+app.set("trust proxy", 1);
 app.use(express.json());
+
+app.use(express.static(frontendPath));
 
 // CORS: explicit origins via env var take precedence; otherwise allow
 // localhost and known Replit proxy domains so the React dev server can reach the API.
@@ -83,6 +94,15 @@ app.use("/api", searchRoutes);
 app.use("/api/client-submissions", clientSubmissionsRoutes);
 app.use("/api/export", exportRoutes);
 app.use("/api", healthRoutes);
+
+
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api")) {
+    return next();
+  }
+
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
 
 app.use((req, res) => res.status(404).json({ error: "Not found" }));
 

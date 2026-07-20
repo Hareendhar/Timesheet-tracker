@@ -1,6 +1,7 @@
 const express = require("express");
 const crypto = require("crypto");
-const { OAuth2Client } = require("google-auth-library");
+// const { OAuth2Client } = require("google-auth-library");
+const { ConfidentialClientApplication } = require("@azure/msal-node");
 // const { store } = require("../data/store");
 const employeeRepo = require("../repositories/employees");
 const { asyncHandler } = require("../lib/auth");
@@ -30,11 +31,21 @@ function frontendUrl(path) {
   return `${base}${path}`;
 }
 
-function getOAuthClient() {
-  return new OAuth2Client({
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri: process.env.GOOGLE_REDIRECT_URI,
+// function getOAuthClient() {
+//   return new OAuth2Client({
+//     clientId: process.env.GOOGLE_CLIENT_ID,
+//     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+//     redirectUri: process.env.GOOGLE_REDIRECT_URI,
+//   });
+// }
+
+function getMicrosoftClient() {
+  return new ConfidentialClientApplication({
+    auth: {
+      clientId: process.env.AZURE_CLIENT_ID,
+      authority: `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}`,
+      clientSecret: process.env.AZURE_CLIENT_SECRET,
+    },
   });
 }
 
@@ -111,57 +122,164 @@ router.post(
 );
 
 // Step 1: redirect the browser to Google's consent screen.
-router.get("/google", (req, res) => {
-  const state = crypto.randomBytes(16).toString("hex");
-  req.session.oauthState = state;
+// router.get("/google", (req, res) => {
+//   const state = crypto.randomBytes(16).toString("hex");
+//   req.session.oauthState = state;
 
-  const allowedDomains = getAllowedDomains();
-  const client = getOAuthClient();
-  const authUrl = client.generateAuthUrl({
-    scope: ["openid", "email", "profile"],
-    state,
-    prompt: "select_account",
-    // `hd` only accepts a single domain as a UI hint — with more than one
-    // allowed domain we omit it and rely on the callback's allow-list check.
-    ...(allowedDomains.length === 1 ? { hd: allowedDomains[0] } : {}),
-  });
+//   const allowedDomains = getAllowedDomains();
+//   const client = getOAuthClient();
+//   const authUrl = client.generateAuthUrl({
+//     scope: ["openid", "email", "profile"],
+//     state,
+//     prompt: "select_account",
+//     // `hd` only accepts a single domain as a UI hint — with more than one
+//     // allowed domain we omit it and rely on the callback's allow-list check.
+//     ...(allowedDomains.length === 1 ? { hd: allowedDomains[0] } : {}),
+//   });
 
-  res.redirect(authUrl);
+//   res.redirect(authUrl);
+// });
+
+
+
+router.get("/microsoft", async (req, res, next) => {
+  console.log("=== MICROSOFT LOGIN ROUTE HIT ===");
+  try {
+    const state = crypto.randomBytes(16).toString("hex");
+    req.session.oauthState = state;
+
+    console.log("Stored state:", state);
+console.log("Session ID:", req.sessionID);
+
+    const client = getMicrosoftClient();
+
+    const authUrl = await client.getAuthCodeUrl({
+      scopes: ["openid", "profile", "email", "User.Read"],
+      redirectUri: process.env.AZURE_REDIRECT_URI,
+      state,
+      prompt: "select_account",
+    });
+
+    req.session.save((err) => {
+      if (err) {
+        return next(err);
+      }
+
+      res.redirect(authUrl);
+    });
+
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Step 2: Google redirects back here with a code (or an error).
+// router.get(
+//   "/google/callback",
+//   asyncHandler(async (req, res) => {
+//     const { code, state, error } = req.query;
+
+//     if (error) return res.redirect(frontendUrl("/login?error=access_denied"));
+//     if (!state || state !== req.session.oauthState) return res.redirect(frontendUrl("/login?error=invalid_state"));
+//     delete req.session.oauthState;
+
+//     const client = getOAuthClient();
+//     let payload;
+//     try {
+//       const { tokens } = await client.getToken(code);
+//       const ticket = await client.verifyIdToken({
+//         idToken: tokens.id_token,
+//         audience: process.env.GOOGLE_CLIENT_ID,
+//       });
+//       payload = ticket.getPayload();
+//     } catch {
+//       return res.redirect(frontendUrl("/login?error=oauth_failed"));
+//     }
+
+//     if (!payload?.email || !payload.email_verified) return res.redirect(frontendUrl("/login?error=oauth_failed"));
+
+//     const allowedDomains = getAllowedDomains();
+//     if (allowedDomains.length > 0 && !allowedDomains.includes(payload.hd?.toLowerCase()))
+//       return res.redirect(frontendUrl("/login?error=domain_not_allowed"));
+
+//     const employee = await employeeRepo.findByEmail(payload.email);
+//     if (!employee || employee.status !== "Active") return res.redirect(frontendUrl("/login?error=not_authorized"));
+
+//     req.session.user = sessionUserFromEmployee(employee);
+//     res.redirect(frontendUrl("/"));
+//   }),
+// );
+
+
+
+
+
+
+
+
 router.get(
-  "/google/callback",
+  "/microsoft/callback",
   asyncHandler(async (req, res) => {
     const { code, state, error } = req.query;
 
-    if (error) return res.redirect(frontendUrl("/login?error=access_denied"));
-    if (!state || state !== req.session.oauthState) return res.redirect(frontendUrl("/login?error=invalid_state"));
+    console.log("Returned state:", state);
+console.log("Session state:", req.session.oauthState);
+console.log("Session ID:", req.sessionID);
+
+    if (error) {
+      return res.redirect(frontendUrl("/login?error=access_denied"));
+    }
+
+    if (!state || state !== req.session.oauthState) {
+      return res.redirect(frontendUrl("/login?error=invalid_state"));
+    }
+
     delete req.session.oauthState;
 
-    const client = getOAuthClient();
-    let payload;
+    const client = getMicrosoftClient();
+
+    let account;
+
     try {
-      const { tokens } = await client.getToken(code);
-      const ticket = await client.verifyIdToken({
-        idToken: tokens.id_token,
-        audience: process.env.GOOGLE_CLIENT_ID,
+      const tokenResponse = await client.acquireTokenByCode({
+        code,
+        scopes: ["openid", "profile", "email", "User.Read"],
+        redirectUri: process.env.AZURE_REDIRECT_URI,
       });
-      payload = ticket.getPayload();
-    } catch {
+
+      account = tokenResponse.account;
+
+    } catch (err) {
+      console.error("Microsoft OAuth error:", err);
       return res.redirect(frontendUrl("/login?error=oauth_failed"));
     }
 
-    if (!payload?.email || !payload.email_verified) return res.redirect(frontendUrl("/login?error=oauth_failed"));
 
-    const allowedDomains = getAllowedDomains();
-    if (allowedDomains.length > 0 && !allowedDomains.includes(payload.hd?.toLowerCase()))
-      return res.redirect(frontendUrl("/login?error=domain_not_allowed"));
+    const email =
+      account?.username ||
+      account?.idTokenClaims?.preferred_username ||
+      account?.idTokenClaims?.email;
 
-    const employee = await employeeRepo.findByEmail(payload.email);
-    if (!employee || employee.status !== "Active") return res.redirect(frontendUrl("/login?error=not_authorized"));
+
+    if (!email) {
+      return res.redirect(frontendUrl("/login?error=oauth_failed"));
+    }
+
+
+    const employee = await employeeRepo.findByEmail(
+      email.toLowerCase()
+    );
+
+
+    if (!employee || employee.status !== "Active") {
+      return res.redirect(
+        frontendUrl("/login?error=not_authorized")
+      );
+    }
+
 
     req.session.user = sessionUserFromEmployee(employee);
+
     res.redirect(frontendUrl("/"));
   }),
 );

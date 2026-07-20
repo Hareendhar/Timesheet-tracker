@@ -146,7 +146,7 @@ async function buildSummaryRow(t) {
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    console.log("CLIENT SUBMISSIONS GET START");
+    // console.log("CLIENT SUBMISSIONS GET START");
     const { page = 1, pageSize = 20, projectId, clientManagerEmail, managerId, status } = req.query;
 
 
@@ -223,7 +223,7 @@ router.get(
         .map(buildSummaryRow)
     );
 
-    console.log("CLIENT SUBMISSIONS DATA READY", data.length);
+    // console.log("CLIENT SUBMISSIONS DATA READY", data.length);
 
     res.json({
       data,

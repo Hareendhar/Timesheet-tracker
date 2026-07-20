@@ -108,4 +108,27 @@ router.get(
   }),
 );
 
+
+router.get(
+  "/monthly-timesheets",
+  requireRole("HR"),
+  asyncHandler(async (req, res) => {
+
+    const {
+      year,
+      month,
+      projectId,
+    } = req.query;
+
+    const data = await timesheetRepo.findApprovedByMonth(
+      projectId,
+      Number(year),
+      Number(month)
+    );
+
+    res.json(data);
+
+  })
+);
+
 module.exports = router;

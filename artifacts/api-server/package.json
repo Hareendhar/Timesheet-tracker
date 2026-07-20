@@ -2,18 +2,14 @@
   "name": "@workspace/api-server",
   "version": "1.0.0",
   "private": true,
-  
   "description": "Versatile Timesheet Tracker API server (Node/Express, in-memory JSON data store for local dev)",
   "main": "src/index.js",
-  
-  
   "scripts": {
-  "dev": "tsx src/index.cjs",
-  "start": "tsx src/index.cjs"
-  } ,
-
-  
+    "dev": "tsx src/index.cjs",
+    "start": "tsx src/index.cjs"
+  },
   "dependencies": {
+    "@azure/msal-node": "^5.4.1",
     "@workspace/db": "workspace:*",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -21,6 +17,7 @@
     "express": "^4.21.2",
     "express-session": "^1.18.1",
     "google-auth-library": "^9.15.0",
+    "jose": "^6.2.3",
     "multer": "^1.4.5-lts.1"
   }
 }
