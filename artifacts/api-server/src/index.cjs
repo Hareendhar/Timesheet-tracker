@@ -23,6 +23,7 @@ const searchRoutes = require("./routes/search");
 const clientSubmissionsRoutes = require("./routes/clientSubmissions");
 const exportRoutes = require("./routes/export");
 const healthRoutes = require("./routes/health");
+const kekaRoutes = require("./routes/keka");
 const { InvalidTransitionException } = require("./lib/exceptions");
 
 const app = express();
@@ -94,6 +95,7 @@ app.use("/api", searchRoutes);
 app.use("/api/client-submissions", clientSubmissionsRoutes);
 app.use("/api/export", exportRoutes);
 app.use("/api", healthRoutes);
+app.use("/api/keka", kekaRoutes);
 
 
 app.get("*", (req, res, next) => {
@@ -116,3 +118,4 @@ const port = process.env.PORT || 3001;
 app.listen(port, "0.0.0.0", () => {
   console.log(`API server listening on http://0.0.0.0:${port}`);
 });
+

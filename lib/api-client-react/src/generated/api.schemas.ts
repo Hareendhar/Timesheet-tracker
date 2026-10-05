@@ -5,6 +5,26 @@
  * Versatile Timesheet Portal API
  * OpenAPI spec version: 0.1.0
  */
+export interface KekaAttendance {
+  employeeNumber?: string;
+  workMode?: string;
+  premiseName?: string | null;
+  attendanceDate?: string;
+  grossHours?: number;
+  effectiveHours?: number;
+  breakHours?: number;
+  effectiveOvertimeHours?: number;
+  grossOvertimeHours?: number;
+  firstIn?: string | null;
+  lastOut?: string | null;
+}
+
+export interface KekaAttendanceResponse {
+  data?: KekaAttendance[];
+  totalRecords?: number;
+  totalPages?: number;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -659,4 +679,10 @@ export const ExportAuditLogsFormat = {
   csv: 'csv',
   excel: 'excel',
 } as const;
+
+export type GetKekaAttendanceParams = {
+from: string;
+to: string;
+employeeNumber?: string;
+};
 

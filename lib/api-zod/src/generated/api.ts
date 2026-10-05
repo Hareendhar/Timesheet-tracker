@@ -1081,3 +1081,31 @@ export const ExportAuditLogsQueryParams = zod.object({
 })
 
 
+/**
+ * @summary Get Keka attendance
+ */
+export const GetKekaAttendanceQueryParams = zod.object({
+  "from": zod.date(),
+  "to": zod.date(),
+  "employeeNumber": zod.coerce.string().optional()
+})
+
+export const GetKekaAttendanceResponse = zod.object({
+  "data": zod.array(zod.object({
+  "employeeNumber": zod.string().optional(),
+  "workMode": zod.string().optional(),
+  "premiseName": zod.string().nullish(),
+  "attendanceDate": zod.coerce.date().optional(),
+  "grossHours": zod.number().optional(),
+  "effectiveHours": zod.number().optional(),
+  "breakHours": zod.number().optional(),
+  "effectiveOvertimeHours": zod.number().optional(),
+  "grossOvertimeHours": zod.number().optional(),
+  "firstIn": zod.coerce.date().nullish(),
+  "lastOut": zod.coerce.date().nullish()
+})).optional(),
+  "totalRecords": zod.number().optional(),
+  "totalPages": zod.number().optional()
+})
+
+

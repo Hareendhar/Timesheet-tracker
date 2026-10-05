@@ -980,8 +980,88 @@ paths:
                 type: string
                 format: binary
 
+  /keka/attendance:
+    get:
+      operationId: getKekaAttendance
+      tags: [keka]
+      summary: Get Keka attendance
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+
+        - name: employeeNumber
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Keka attendance records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KekaAttendanceResponse"
+        "400":
+          description: Missing date parameters
+        "500":
+          description: Failed to fetch attendance from Keka
+
 components:
   schemas:
+    KekaAttendance:
+      type: object
+      properties:
+        employeeNumber:
+          type: string
+        workMode:
+          type: string
+        premiseName:
+          type: string
+          nullable: true
+        attendanceDate:
+          type: string
+          format: date-time
+        grossHours:
+          type: number
+        effectiveHours:
+          type: number
+        breakHours:
+          type: number
+        effectiveOvertimeHours:
+          type: number
+        grossOvertimeHours:
+          type: number
+        firstIn:
+          type: string
+          format: date-time
+          nullable: true
+        lastOut:
+          type: string
+          format: date-time
+          nullable: true
+
+    KekaAttendanceResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/KekaAttendance"
+        totalRecords:
+          type: integer
+        totalPages:
+          type: integer
+
     HealthStatus:
       type: object
       properties:
@@ -1726,3 +1806,5 @@ components:
           items:
             $ref: "#/components/schemas/Client"
       required: [employees, projects, clients]
+
+

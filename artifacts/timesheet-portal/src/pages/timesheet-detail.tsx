@@ -1,5 +1,7 @@
 import { useParams, useLocation } from "wouter";
-import { useGetTimesheet, useUpdateTimesheet, useSubmitTimesheet, useListProjects, useListActivities, useGetCurrentUser, getGetTimesheetQueryKey } from "@workspace/api-client-react";
+import { useGetTimesheet, useUpdateTimesheet, useSubmitTimesheet, useListProjects, useListActivities, useGetCurrentUser, getGetTimesheetQueryKey, useGetKekaAttendance } from "@workspace/api-client-react";
+
+// import { useGetTimesheet, useUpdateTimesheet, useSubmitTimesheet, useListProjects, useListActivities, useGetCurrentUser, getGetTimesheetQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +26,23 @@ export default function TimesheetDetail() {
   const { toast } = useToast();
   const { data: user } = useGetCurrentUser();
   const { data: timesheet, isLoading } = useGetTimesheet(id || "", { query: { enabled: !!id, queryKey: getGetTimesheetQueryKey(id || "") } });
+
+  const { data: kekaAttendance, isLoading: isKekaLoading } = useGetKekaAttendance(
+  {
+    from: timesheet?.weekStartDate || "",
+    to: timesheet?.weekEndDate || "",
+    employeeNumber: user?.employeeId || "",
+  },
+  {
+    query: {
+  enabled: !!timesheet?.weekStartDate && !!timesheet?.weekEndDate,
+  // queryKey: ["keka-attendance", timesheet?.weekStartDate, timesheet?.weekEndDate],
+  queryKey: ["keka-attendance", timesheet?.weekStartDate, timesheet?.weekEndDate, user?.employeeId],
+},
+  }
+);
+
+
   const { data: projects } = useListProjects({ pageSize: 100 });
   const { data: activities } = useListActivities();
 
@@ -120,6 +139,74 @@ export default function TimesheetDetail() {
           <p className="text-muted-foreground mt-1">
             Week of {format(parseISO(timesheet.weekStartDate), "MMMM d, yyyy")}
           </p>
+
+
+          {!isKekaLoading && kekaAttendance?.data && (
+  <div className="mt-4 rounded-lg border p-4">
+    <h3 className="font-semibold">Keka Attendance</h3>
+
+    <div className="mt-3 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-left">
+            <th className="p-2">Date</th>
+            <th className="p-2">Work Mode</th>
+            <th className="p-2">Premise</th>
+            <th className="p-2">First In</th>
+            <th className="p-2">Last Out</th>
+            <th className="p-2 text-right">Gross Hours</th>
+            <th className="p-2 text-right">Effective Hours</th>
+            <th className="p-2 text-right">Break Hours</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {kekaAttendance.data.map((attendance) => (
+            <tr key={attendance.attendanceDate} className="border-b">
+              <td className="p-2">
+                {format(
+                  parseISO(attendance.attendanceDate || ""),
+                  // parseISO(attendance.attendanceDate),
+                  "dd MMM yyyy"
+                )}
+              </td>
+
+              <td className="p-2">
+                <Badge variant="outline">
+                  {attendance.workMode}
+                </Badge>
+              </td>
+
+              <td className="p-2">
+                {attendance.premiseName || "-"}
+              </td>
+
+              <td className="p-2">
+                {attendance.firstIn || "-"}
+              </td>
+
+              <td className="p-2">
+                {attendance.lastOut || "-"}
+              </td>
+
+              <td className="p-2 text-right">
+                {attendance.grossHours ?? 0}
+              </td>
+
+              <td className="p-2 text-right font-semibold">
+                {attendance.effectiveHours ?? 0}
+              </td>
+
+              <td className="p-2 text-right">
+                {attendance.breakHours ?? 0}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
         </div>
       </div>
 

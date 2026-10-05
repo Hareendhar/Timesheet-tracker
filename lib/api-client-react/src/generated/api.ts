@@ -46,10 +46,12 @@ import type {
   ExportAuditLogsParams,
   ExportEmployeesParams,
   ExportTimesheetsParams,
+  GetKekaAttendanceParams,
   GetRecentActivityParams,
   GlobalSearchParams,
   GoogleOAuthCallbackParams,
   HealthStatus,
+  KekaAttendanceResponse,
   ListAuditLogsParams,
   ListClientsParams,
   ListEmployeesParams,
@@ -3793,6 +3795,90 @@ export function useExportAuditLogs<TData = Awaited<ReturnType<typeof exportAudit
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getExportAuditLogsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetKekaAttendanceUrl = (params: GetKekaAttendanceParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/keka/attendance?${stringifiedParams}` : `/api/keka/attendance`
+}
+
+/**
+ * @summary Get Keka attendance
+ */
+export const getKekaAttendance = async (params: GetKekaAttendanceParams, options?: RequestInit): Promise<KekaAttendanceResponse> => {
+
+  return customFetch<KekaAttendanceResponse>(getGetKekaAttendanceUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetKekaAttendanceQueryKey = (params?: GetKekaAttendanceParams,) => {
+    return [
+    `/api/keka/attendance`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetKekaAttendanceQueryOptions = <TData = Awaited<ReturnType<typeof getKekaAttendance>>, TError = ErrorType<void>>(params: GetKekaAttendanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getKekaAttendance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetKekaAttendanceQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getKekaAttendance>>> = ({ signal }) => getKekaAttendance(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getKekaAttendance>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetKekaAttendanceQueryResult = NonNullable<Awaited<ReturnType<typeof getKekaAttendance>>>
+export type GetKekaAttendanceQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get Keka attendance
+ */
+
+export function useGetKekaAttendance<TData = Awaited<ReturnType<typeof getKekaAttendance>>, TError = ErrorType<void>>(
+ params: GetKekaAttendanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getKekaAttendance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetKekaAttendanceQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
